@@ -5,8 +5,8 @@ from math import isnan
 from pathlib import Path
 from typing import Any, Dict, Iterable, Union
 
-from src.utils import get_data_from_excel
 from src.decorators import backlogging
+from src.utils import get_data_from_excel
 
 logger = logging.getLogger("services")
 
@@ -81,5 +81,5 @@ def calculate_category_cashback(
 if __name__ == "__main__":
     path = Path(__file__).parent.parent / "data" / "operations.xlsx"
     transactions_ = get_data_from_excel(path)
-    final_json = calculate_category_cashback(transactions_, 2019)
+    final_json = calculate_category_cashback(transactions_, 2020)
     print(final_json)

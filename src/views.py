@@ -11,8 +11,8 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-from src.utils import get_data_from_excel
 from src.decorators import backlogging
+from src.utils import get_data_from_excel
 
 logger = logging.getLogger("views")
 

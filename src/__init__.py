@@ -7,7 +7,9 @@ if not logging.root.handlers:
     log_dir.mkdir(exist_ok=True)
 
     file_handler = logging.FileHandler(filename=log_dir / "application.log", mode="w", encoding="utf-8")
-    file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(funcName)s - %(lineno)s - %(levelname)s - %(message)s"))
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(funcName)s - %(lineno)s - %(levelname)s - %(message)s")
+    )
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
