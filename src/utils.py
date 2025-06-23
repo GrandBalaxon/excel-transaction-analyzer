@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger("utils")
 
 
 def get_data_from_excel(file_path: Path) -> Iterable[Optional[Dict[str, Any]]]:

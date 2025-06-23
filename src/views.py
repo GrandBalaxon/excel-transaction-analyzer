@@ -6,32 +6,37 @@ from collections import defaultdict
 from functools import wraps
 from math import isnan
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, ParamSpec, TypeVar, Callable
+import pandas as pd
 
 import requests
 from dotenv import load_dotenv
 
 from src.utils import get_data_from_excel
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger("views")
+
+T = TypeVar("T")
+P = ParamSpec("P")
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 
 
-def backlogging_with_date_and_list_variables(function):
-    """  """
+def backlogging_with_date_and_list_variables(function: Callable[]):
+    """ Декоратор для кэширования результатов функций для API-запросов. """
     @wraps(function)
     def wrapper(date: datetime.datetime, list_: List[str]):
         simple_date = date.strftime("%Y-%m-%d")
+        list_str = " ".join(sorted(list_))
 
-        logger.info(f"Начат поиск результата для функции {function.__name__} c параметрами {date, list_}.")
+        logger.info(f"Начат поиск результата для функции {function.__name__} c параметрами {simple_date, list_}.")
 
         backlog_file_path = Path(__file__).parent.parent / "data" / "backlogged_data.json"
         try:
             with open(backlog_file_path) as json_file:
                 backlog_dict: Dict[str, Any] = json.load(json_file)
-                logger.info("Данные с бэк-лога успешно получены.")
+            logger.info("Данные с бэк-лога успешно получены.")
         except json.decoder.JSONDecodeError:
             logger.warning("Файл бэк-логов пока пуст.")
             backlog_dict = {}
@@ -44,37 +49,41 @@ def backlogging_with_date_and_list_variables(function):
 
                 if function.__name__ == "get_sp500_index":
                     try:
-                        result = backlog_dict[simple_date]["stock_prices"][tuple(list_)]
-                        logger.info(f"Результат вычислений успешно взят из бэк-лога.")
-                        return result
+                        if isinstance(backlog_dict[simple_date]["stock_prices"][list_str], list):
+                            result = backlog_dict[simple_date]["stock_prices"][list_str]
+                            logger.info(f"Результат вычислений успешно взят из бэк-лога.")
+                            return result
                     except KeyError:
                         logger.info(f"В бэк-логе еще нет результата вычислений с данными входными данными.")
                 elif function.__name__ == "get_currency_rates":
                     try:
-                        result = backlog_dict[simple_date]["currency_rates"][tuple(list_)]
-                        logger.info(f"Результат вычислений успешно взят из бэк-лога.")
-                        return result
+                        if isinstance(backlog_dict[simple_date]["currency_rates"][list_str], list):
+                            result = backlog_dict[simple_date]["currency_rates"][list_str]
+                            logger.info(f"Результат вычислений успешно взят из бэк-лога.")
+                            return result
                     except KeyError:
                         logger.info(f"В бэк-логе еще нет результата вычислений с данными входными данными.")
 
             else:
                 logger.info(f"Не найден, но создан словарь по ключу {simple_date}.")
-                backlog_dict[simple_date] = {
-                    "currency_rates": {},
-                    "stock_prices": {}
-                }
+                backlog_dict[simple_date] = {"currency_rates": {}, "stock_prices": {}}
+
+        else:
+            logger.info(f"Не найден, но создан словарь по ключу {simple_date}.")
+            backlog_dict[simple_date] = {"currency_rates": {}, "stock_prices": {}}
 
         result = function(date, list_)
 
         # добавление результатов в бэк-лог после расчетов
         if function.__name__ == "get_sp500_index":
-            backlog_dict[simple_date]["stock_prices"][tuple(list_)] = result
+            backlog_dict[simple_date]["stock_prices"][list_str] = result
         elif function.__name__ == "get_currency_rates":
-            backlog_dict[simple_date]["currency_rates"][tuple(list_)] = result
+            backlog_dict[simple_date]["currency_rates"][list_str] = result
 
         # запись обратно в файл
         with open(backlog_file_path, "w", encoding="UTF-8") as json_file:
-            json.dump(backlog_dict, json_file)
+            json.dump(backlog_dict, json_file, indent=2)
+            logger.info(f"Данные успешно записаны в файл {"backlogged_data.json"}.")
 
         return result
     return wrapper
@@ -105,8 +114,36 @@ def is_in_time_period(transaction_date, date_to_look_for) -> bool:
 
 
 @backlogging_with_date_and_list_variables
-def get_currency_rates():
-    pass
+def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> List[Dict[str, Any]]:
+    """  """
+    base_url = "https://iss.moex.com/iss/statistics/engines/futures/markets/indicativerates/securities.json"
+    simple_date = date.strftime("%Y-%m-%d")
+
+    params = {"date": simple_date}
+
+    response = requests.get(base_url, params=params).json()
+
+    # преобразовываем полученный ответ в удобный DataFrame
+    df = pd.DataFrame(
+        response["securities"]["data"],
+        columns=response["securities"]["columns"]
+    )
+    df[["from", "to"]] = df["secid"].str.split(
+        '/',  # Разделитель
+        expand=True,  # Создавать новые колонки
+        n=1  # Делать только одно разделение
+    )
+    df = df.drop(columns=["secid"])
+
+    data_dict = df.to_dict(orient="records")
+    filtered_data = [
+        x for x in data_dict if x["clearing"] == "pk" and x["to"] == "RUB" and x["from"] in currency_list
+    ]
+    currency_rates = [
+        {"currency": x["from"], "rate": round(x["rate"], 2)} for x in filtered_data
+    ]
+
+    return currency_rates
 
 
 @backlogging_with_date_and_list_variables
@@ -211,6 +248,7 @@ def get_main_page_data(date_time: str, transactions: Iterable[Optional[Dict[str,
             logger.info("Данные настроек пользователя успешно получены.")
 
         user_currency_list = user_settings_dict["user_currencies"]
+        currency_rates_list = get_currency_rates(date, user_currency_list)
 
         user_stocks_list = user_settings_dict["user_stocks"]
         stock_prices_list = get_sp500_index(date, user_stocks_list)
@@ -219,20 +257,20 @@ def get_main_page_data(date_time: str, transactions: Iterable[Optional[Dict[str,
             "greeting": get_greeting(date),
             "cards": cards,
             "top_transactions": top_transactions,
-            "currency_rates": [],
+            "currency_rates": currency_rates_list,
             "stock_prices": stock_prices_list
         }
 
-        return json.dumps(final_output, indent=4, ensure_ascii=False)
+        return json.dumps(final_output, indent=2, ensure_ascii=False)
 
     except Exception as e:
         logger.error(f"Непредвиденная ошибка: {str(e)}", exc_info=True)
         final_output = {"error": "Не удалось сформировать данные", "details": str(e)}
-        return json.dumps(final_output, indent=4, ensure_ascii=False)
+        return json.dumps(final_output, indent=2, ensure_ascii=False)
 
 
 if __name__ == "__main__":
     path = Path(__file__).parent.parent / "data" / "operations.xlsx"
     transactions_ = get_data_from_excel(path)
-    final_json = get_main_page_data("2021-05-21 15:45:00", transactions=transactions_)
+    final_json = get_main_page_data("2020-01-10 22:45:11", transactions=transactions_)
     print(final_json)
