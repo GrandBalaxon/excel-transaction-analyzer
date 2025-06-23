@@ -6,9 +6,9 @@ from collections import defaultdict
 from functools import wraps
 from math import isnan
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, ParamSpec, TypeVar, Callable
-import pandas as pd
+from typing import Any, Callable, Dict, Iterable, List, Optional, ParamSpec, TypeVar
 
+import pandas as pd
 import requests
 from dotenv import load_dotenv
 
@@ -23,10 +23,11 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 
 
-def backlogging_with_date_and_list_variables(function: Callable[]):
-    """ Декоратор для кэширования результатов функций для API-запросов. """
+def backlogging_with_date_and_list_variables(function: Callable[P, T]) -> Callable[P, T]:
+    """Декоратор для кэширования результатов функций для API-запросов."""
+
     @wraps(function)
-    def wrapper(date: datetime.datetime, list_: List[str]):
+    def wrapper(date: datetime.datetime, list_: List[str]) -> List[Dict[str, Any]]:
         simple_date = date.strftime("%Y-%m-%d")
         list_str = " ".join(sorted(list_))
 
@@ -86,6 +87,7 @@ def backlogging_with_date_and_list_variables(function: Callable[]):
             logger.info(f"Данные успешно записаны в файл {"backlogged_data.json"}.")
 
         return result
+
     return wrapper
 
 
@@ -115,7 +117,7 @@ def is_in_time_period(transaction_date, date_to_look_for) -> bool:
 
 @backlogging_with_date_and_list_variables
 def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> List[Dict[str, Any]]:
-    """  """
+    """ """
     base_url = "https://iss.moex.com/iss/statistics/engines/futures/markets/indicativerates/securities.json"
     simple_date = date.strftime("%Y-%m-%d")
 
@@ -124,49 +126,33 @@ def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> Lis
     response = requests.get(base_url, params=params).json()
 
     # преобразовываем полученный ответ в удобный DataFrame
-    df = pd.DataFrame(
-        response["securities"]["data"],
-        columns=response["securities"]["columns"]
-    )
-    df[["from", "to"]] = df["secid"].str.split(
-        '/',  # Разделитель
-        expand=True,  # Создавать новые колонки
-        n=1  # Делать только одно разделение
-    )
+    data = response["securities"]["data"]
+    columns = response["securities"]["columns"]
+    df = pd.DataFrame(data, columns=columns)
+
+    df[["from", "to"]] = df["secid"].str.split("/", expand=True, n=1)
     df = df.drop(columns=["secid"])
 
     data_dict = df.to_dict(orient="records")
-    filtered_data = [
-        x for x in data_dict if x["clearing"] == "pk" and x["to"] == "RUB" and x["from"] in currency_list
-    ]
-    currency_rates = [
-        {"currency": x["from"], "rate": round(x["rate"], 2)} for x in filtered_data
-    ]
+    filtered_data = [x for x in data_dict if x["clearing"] == "pk" and x["to"] == "RUB" and x["from"] in currency_list]
+    currency_rates = [{"currency": x["from"], "rate": round(x["rate"], 2)} for x in filtered_data]
 
     return currency_rates
 
 
 @backlogging_with_date_and_list_variables
 def get_sp500_index(date: datetime.datetime, stocks_list: List[str]) -> List[Dict[str, Any]]:
-    """  """
+    """ """
     base_url = "https://financialmodelingprep.com/stable/historical-price-eod/light"
     simple_date = date.strftime("%Y-%m-%d")
 
     stocks_info = []
 
     for stock in stocks_list:
-        params = {
-            "symbol": stock,
-            "apikey": API_KEY,
-            "from": simple_date,
-            "to": simple_date
-        }
+        params = {"symbol": stock, "apikey": API_KEY, "from": simple_date, "to": simple_date}
         response = requests.get(base_url, params=params).json()
         # получаем словарь вида: [{'symbol': 'AAPL', 'date': '2021-05-21', 'price': 125.43, 'volume': 79295436}]
-        info = {
-            "stock": stock,
-            "price": response[0]["price"]
-        }
+        info = {"stock": stock, "price": response[0]["price"]}
         stocks_info.append(info)
 
     return stocks_info
@@ -174,6 +160,7 @@ def get_sp500_index(date: datetime.datetime, stocks_list: List[str]) -> List[Dic
 
 def get_cards_usage_info(transactions_list) -> List[Dict[str, Any]]:
     """"""
+
     def default_value():
         return {"total_spent": 0.0, "cashback": 0.0}
 
@@ -258,7 +245,7 @@ def get_main_page_data(date_time: str, transactions: Iterable[Optional[Dict[str,
             "cards": cards,
             "top_transactions": top_transactions,
             "currency_rates": currency_rates_list,
-            "stock_prices": stock_prices_list
+            "stock_prices": stock_prices_list,
         }
 
         return json.dumps(final_output, indent=2, ensure_ascii=False)
