@@ -1,12 +1,11 @@
-import logging
-from pathlib import Path
 import datetime
 import json
-from typing import Union, Dict, Any, Iterable
+import logging
 from math import isnan
+from pathlib import Path
+from typing import Any, Dict, Iterable, Union
 
 from src.utils import get_data_from_excel
-
 
 logger = logging.getLogger("services")
 
@@ -31,7 +30,9 @@ def is_transaction_in_period(transaction_date: str, year: int, month: Union[int,
         return False
 
 
-def calculate_category_cashback(transactions: Iterable[Dict[str, Any]], year: int, month: Union[int, None] = None) -> str:
+def calculate_category_cashback(
+    transactions: Iterable[Dict[str, Any]], year: int, month: Union[int, None] = None
+) -> str:
     """
     Вычисляет сумму кэшбэка по категориям за указанный период.
 
@@ -45,30 +46,36 @@ def calculate_category_cashback(transactions: Iterable[Dict[str, Any]], year: in
     Returns:
         str: JSON-строка с категориями и суммами кэшбэка
     """
-    filtered_transactions = []
-    for x in transactions:
-        if is_transaction_in_period(x["Дата операции"], year=year, month=month) and not isnan(x["Кэшбэк"]):
-            filtered_transactions.append(x)
-    logger.info(f"Отфильтрованы {len(filtered_transactions)} операций подходящих по дате и с наличием кэшбэка.")
+    try:
+        filtered_transactions = []
+        for x in transactions:
+            if is_transaction_in_period(x["Дата операции"], year=year, month=month) and not isnan(x["Кэшбэк"]):
+                filtered_transactions.append(x)
+        logger.info(f"Отфильтрованы {len(filtered_transactions)} операций подходящих по дате и с наличием кэшбэка.")
 
-    output_dict = {}
+        output_dict = {}
 
-    for transaction in filtered_transactions:
-        category = transaction["Категория"]
-        cashback = transaction["Кэшбэк"]
+        for transaction in filtered_transactions:
+            category = transaction["Категория"]
+            cashback = transaction["Кэшбэк"]
 
-        if cashback == 0:
-            continue
+            if cashback == 0:
+                continue
 
-        if category not in output_dict:
-            output_dict[category] = round(cashback)
-        else:
-            output_dict[category] += round(cashback)
+            if category not in output_dict:
+                output_dict[category] = round(cashback)
+            else:
+                output_dict[category] += round(cashback)
 
-    return json.dumps(output_dict, ensure_ascii=False, indent=2)
+        return json.dumps(output_dict, ensure_ascii=False, indent=2)
+
+    except Exception as e:
+        logger.error(f"Непредвиденная ошибка: {str(e)}", exc_info=True)
+        final_output = {"error": "Не удалось сформировать данные", "details": str(e)}
+        return json.dumps(final_output, indent=2, ensure_ascii=False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     path = Path(__file__).parent.parent / "data" / "operations.xlsx"
     transactions_ = get_data_from_excel(path)
     final_json = calculate_category_cashback(transactions_, 2019)
