@@ -1,17 +1,23 @@
 import datetime
 import json
 import logging
+import os
 from collections import defaultdict
 from math import isnan
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+import requests
+from dotenv import load_dotenv
+
 from src.utils import get_data_from_excel
 
 logger = logging.getLogger(__file__)
 
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
 
-def get_greeting(date_time: datetime) -> str:
+def get_greeting(date_time: datetime.datetime) -> str:
     """Функция возвращает сообщение-приветствие в зависимости от текущего времени."""
     cur_hour = date_time.hour
 
@@ -33,6 +39,55 @@ def is_in_time_period(transaction_date, date_to_look_for) -> bool:
         return True
     else:
         return False
+
+
+def get_sp500_index(date: datetime.datetime) -> List[Dict[str, Any]]:
+    """  """
+    base_url = "https://financialmodelingprep.com/stable/historical-price-eod/light"
+    simple_date = date.strftime("%Y-%m-%d")
+
+    file_path = Path(__file__).parent.parent / "data" / "user_settings.json"
+    with open(file_path) as json_file:
+        user_settings_dict = json.load(json_file)
+        logger.info("Данные настроек пользователя успешно получены.")
+
+    backlog_file_path = Path(__file__).parent.parent / "data" / "backlogged_data.json"
+    try:
+        with open(backlog_file_path) as json_file:
+            backlog_dict: Dict = json.load(json_file)
+            logger.info("Данные с бэк-лога успешно получены.")
+
+    except json.decoder.JSONDecodeError:
+        logger.warning("Файл бэк-логов пока пуст.")
+        backlog_dict = {}
+
+    if not backlog_dict.get(simple_date):
+        backlog_dict[simple_date] = {
+            "currency_rates": [],
+            "stock_prices": []
+        }
+        logger.info(f"Был создан словарь для бэк-лога с данными за {simple_date}.")
+
+    for stock in user_settings_dict["user_stocks"]:
+        # если в бэк-логе еще нет данных за указанную дату
+        if len(backlog_dict[simple_date]["stock_prices"]) < len(user_settings_dict["user_stocks"]):
+            params = {
+                "symbol": stock,
+                "apikey": API_KEY,
+                "from": simple_date,
+                "to": simple_date
+            }
+            response = requests.get(base_url, params=params).json()
+            info = {
+                "stock": response[0]["symbol"],
+                "price": response[0]["price"]
+            }
+            backlog_dict[simple_date]["stock_prices"].append(info)
+            break
+
+
+
+
 
 
 def get_main_page_data(date_time: str, transactions: Iterable[Optional[Dict[str, Any]]]) -> str:
@@ -108,4 +163,8 @@ if __name__ == "__main__":
     path = Path(__file__).parent.parent / "data" / "operations.xlsx"
     transactions_ = get_data_from_excel(path)
     final_json = get_main_page_data("2021-05-21 15:45:00", transactions=transactions_)
-    print(final_json)
+
+    date_ = "2021-05-21 15:45:00"
+    date = datetime.datetime.strptime(date_, "%Y-%m-%d %H:%M:%S")
+
+    print(get_sp500_index(date)) # [{'symbol': 'AAPL', 'date': '2021-05-21', 'price': 125.43, 'volume': 79295436}]
