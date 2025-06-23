@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Union
 
 from src.utils import get_data_from_excel
+from src.decorators import backlogging
 
 logger = logging.getLogger("services")
 
@@ -30,6 +31,7 @@ def is_transaction_in_period(transaction_date: str, year: int, month: Union[int,
         return False
 
 
+@backlogging("services_backlog.json")
 def calculate_category_cashback(
     transactions: Iterable[Dict[str, Any]], year: int, month: Union[int, None] = None
 ) -> str:
@@ -67,6 +69,7 @@ def calculate_category_cashback(
             else:
                 output_dict[category] += round(cashback)
 
+        logger.info(f"Итоговый словарь содержит в себе {len(output_dict)} категорий кэшбэка.")
         return json.dumps(output_dict, ensure_ascii=False, indent=2)
 
     except Exception as e:

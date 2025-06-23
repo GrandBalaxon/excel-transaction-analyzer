@@ -3,92 +3,21 @@ import json
 import logging
 import os
 from collections import defaultdict
-from functools import wraps
 from math import isnan
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, ParamSpec, TypeVar
+from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
 import requests
 from dotenv import load_dotenv
 
 from src.utils import get_data_from_excel
+from src.decorators import backlogging
 
 logger = logging.getLogger("views")
 
-T = TypeVar("T")
-P = ParamSpec("P")
-
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
-
-
-def backlogging_with_date_and_list_variables(function: Callable[P, T]) -> Callable[P, T]:
-    """Декоратор для кэширования результатов функций для API-запросов."""
-
-    @wraps(function)
-    def wrapper(date: datetime.datetime, list_: List[str]) -> List[Dict[str, Any]]:
-        simple_date = date.strftime("%Y-%m-%d")
-        list_str = " ".join(sorted(list_))
-
-        logger.info(f"Начат поиск результата для функции {function.__name__} c параметрами {simple_date, list_}.")
-
-        backlog_file_path = Path(__file__).parent.parent / "data" / "backlogged_data.json"
-        try:
-            with open(backlog_file_path) as json_file:
-                backlog_dict: Dict[str, Any] = json.load(json_file)
-            logger.info("Данные с бэк-лога успешно получены.")
-        except json.decoder.JSONDecodeError:
-            logger.warning("Файл бэк-логов пока пуст.")
-            backlog_dict = {}
-
-        # если бэк-лог файл не пуст
-        if backlog_dict:
-            # если у нас есть нужная ключ-дата
-            if backlog_dict.get(simple_date):
-                logger.info(f"Найден словарь по ключу {simple_date}.")
-
-                if function.__name__ == "get_sp500_index":
-                    try:
-                        if isinstance(backlog_dict[simple_date]["stock_prices"][list_str], list):
-                            result = backlog_dict[simple_date]["stock_prices"][list_str]
-                            logger.info(f"Результат вычислений успешно взят из бэк-лога.")
-                            return result
-                    except KeyError:
-                        logger.info(f"В бэк-логе еще нет результата вычислений с данными входными данными.")
-                elif function.__name__ == "get_currency_rates":
-                    try:
-                        if isinstance(backlog_dict[simple_date]["currency_rates"][list_str], list):
-                            result = backlog_dict[simple_date]["currency_rates"][list_str]
-                            logger.info(f"Результат вычислений успешно взят из бэк-лога.")
-                            return result
-                    except KeyError:
-                        logger.info(f"В бэк-логе еще нет результата вычислений с данными входными данными.")
-
-            else:
-                logger.info(f"Не найден, но создан словарь по ключу {simple_date}.")
-                backlog_dict[simple_date] = {"currency_rates": {}, "stock_prices": {}}
-
-        else:
-            logger.info(f"Не найден, но создан словарь по ключу {simple_date}.")
-            backlog_dict[simple_date] = {"currency_rates": {}, "stock_prices": {}}
-
-        result = function(date, list_)
-
-        # добавление результатов в бэк-лог после расчетов
-        if function.__name__ == "get_sp500_index":
-            backlog_dict[simple_date]["stock_prices"][list_str] = result
-        elif function.__name__ == "get_currency_rates":
-            backlog_dict[simple_date]["currency_rates"][list_str] = result
-
-        # запись обратно в файл
-        with open(backlog_file_path, "w", encoding="UTF-8") as json_file:
-            json.dump(backlog_dict, json_file, indent=2)
-            logger.info(f"Данные успешно записаны в файл {"backlogged_data.json"}.")
-
-        return result
-
-    return wrapper
 
 
 def get_greeting(date_time: datetime.datetime) -> str:
@@ -115,7 +44,7 @@ def is_in_time_period(transaction_date, date_to_look_for) -> bool:
         return False
 
 
-@backlogging_with_date_and_list_variables
+@backlogging
 def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> List[Dict[str, Any]]:
     """ """
     base_url = "https://iss.moex.com/iss/statistics/engines/futures/markets/indicativerates/securities.json"
@@ -140,7 +69,7 @@ def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> Lis
     return currency_rates
 
 
-@backlogging_with_date_and_list_variables
+@backlogging
 def get_sp500_index(date: datetime.datetime, stocks_list: List[str]) -> List[Dict[str, Any]]:
     """ """
     base_url = "https://financialmodelingprep.com/stable/historical-price-eod/light"
