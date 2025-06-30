@@ -12,5 +12,5 @@ if not logging.root.handlers:
     )
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(logging.DEBUG)
     root_logger.addHandler(file_handler)

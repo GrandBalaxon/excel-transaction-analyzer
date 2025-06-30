@@ -48,16 +48,18 @@ def backlogging(backlog_file_name: str = "backlogged_data.json") -> Callable[[Ca
 
             cache = backlog_dict[function.__name__]
 
-            if key in cache:
+            if key in cache and cache[key]:
                 return cache[key]
             else:
                 result = function(*args, **kwargs)
-                cache[key] = result
 
-                # запись обратно в файл
-                with open(backlog_file_path, "w", encoding="UTF-8") as json_file:
-                    json.dump(backlog_dict, json_file, indent=2, ensure_ascii=False)
-                logger.info(f"Данные успешно записаны в файл {backlog_file_name}.")
+                if result is not None:
+                    cache[key] = result
+
+                    # запись обратно в файл
+                    with open(backlog_file_path, "w", encoding="UTF-8") as json_file:
+                        json.dump(backlog_dict, json_file, indent=2, ensure_ascii=False)
+                    logger.info(f"Данные успешно записаны в файл {backlog_file_name}.")
 
                 return result
 
