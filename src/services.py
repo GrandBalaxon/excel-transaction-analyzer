@@ -31,7 +31,7 @@ def is_transaction_in_period(transaction_date: str, year: int, month: Union[int,
         return False
 
 
-@backlogging("services_backlog.json")
+@backlogging("services_log.json")
 def calculate_category_cashback(
     transactions: Iterable[Dict[str, Any]], year: int, month: Union[int, None] = None
 ) -> str:

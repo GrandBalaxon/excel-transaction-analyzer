@@ -44,7 +44,7 @@ def is_in_time_period(transaction_date, date_to_look_for) -> bool:
         return False
 
 
-@backlogging
+@backlogging("views_log.json")
 def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> List[Dict[str, Any]]:
     """ """
     base_url = "https://iss.moex.com/iss/statistics/engines/futures/markets/indicativerates/securities.json"
@@ -69,7 +69,7 @@ def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> Lis
     return currency_rates
 
 
-@backlogging
+@backlogging("views_log.json")
 def get_sp500_index(date: datetime.datetime, stocks_list: List[str]) -> List[Dict[str, Any]]:
     """ """
     base_url = "https://financialmodelingprep.com/stable/historical-price-eod/light"

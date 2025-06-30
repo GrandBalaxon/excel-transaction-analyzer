@@ -3,7 +3,7 @@ import json
 import logging
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, List, ParamSpec, TypeVar
+from typing import Any, Callable, Dict, ParamSpec, TypeVar
 
 logger = logging.getLogger("decorators")
 
@@ -32,7 +32,7 @@ def backlogging(backlog_file_name: str = "backlogged_data.json") -> Callable[[Ca
 
             logger.info(f"Поиск кэша для функции {function.__name__} c ключом {key[:8]}...")
 
-            backlog_file_path = Path(__file__).parent.parent / "data" / backlog_file_name
+            backlog_file_path = Path(__file__).parent.parent / "logs" / backlog_file_name
             backlog_file_path.touch(exist_ok=True)
 
             try:
