@@ -19,7 +19,14 @@ def get_transactions_df(file_path: Path) -> Optional[pd.DataFrame]:
     :return: DataFrame с транзакциями или None в случае ошибки
     """
     try:
-        return pd.read_excel(file_path)
+        df = pd.read_excel(file_path)
+
+        if not df.empty:
+            logger.info(f"Успешно прочитано {len(df)} транзакций из Excel")
+            return df
+        else:
+            logger.warning("Файл пуст.")
+            return None
 
     except Exception as e:
         logger.error(f"Не удалось открыть файл по пути {file_path} - ошибка {str(e)}", exc_info=True)
