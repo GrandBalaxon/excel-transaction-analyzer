@@ -21,9 +21,3 @@ def get_data_from_excel(file_path: Path) -> Iterable[Optional[Dict[str, Any]]]:
     except Exception as e:
         logger.error(f"Не удалось открыть файл по пути {file_path} - ошибка {e}")
         return []
-
-
-if __name__ == "__main__":
-    path = Path(__file__).parent.parent / "data" / "operations.xlsx"
-    transactions = get_data_from_excel(path)
-    print(transactions[0])
