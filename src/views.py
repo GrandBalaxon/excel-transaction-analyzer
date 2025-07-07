@@ -12,7 +12,6 @@ import requests
 from dotenv import load_dotenv
 
 from src.decorators import backlogging
-from src.utils import get_data_from_excel
 
 logger = logging.getLogger("views")
 
@@ -35,7 +34,17 @@ def get_greeting(date_time: datetime.datetime) -> str:
 
 
 def is_in_time_period(transaction_date, date_to_look_for) -> bool:
-    """ """
+    """
+    Проверяет, попадает ли транзакция в указанный временной период.
+
+    Args:
+        transaction_date: Дата транзакции в формате "дд.мм.ГГГГ ЧЧ:ММ:СС"
+        date_to_look_for: Дата, с которой сравнивается транзакция (включая время)
+
+    Returns:
+        True - если транзакция произошла в том же году и месяце, что и date_to_look_for,
+        и не позднее указанной даты (включительно). Иначе False.
+    """
     t_d = datetime.datetime.strptime(transaction_date, "%d.%m.%Y %H:%M:%S")
 
     if t_d.year == date_to_look_for.year and t_d.month == date_to_look_for.month and t_d <= date_to_look_for:
@@ -46,7 +55,18 @@ def is_in_time_period(transaction_date, date_to_look_for) -> bool:
 
 @backlogging("views_log.json")
 def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> List[Dict[str, Any]]:
-    """ """
+    """
+    Получает курсы валют с Московской Биржи на указанную дату и фильтрует по заданному списку валют.
+
+    Args:
+        date: Дата для получения курсов
+        currency_list: Список валютных пар (например, ["USD", "EUR"]), где валюта конвертируется в RUB
+
+    Returns:
+        Список словарей с курсами валют формата:
+        [{"currency": "USD", "rate": 75.50}, ...]
+        где rate округлен до 2 знаков после запятой.
+    """
     base_url = "https://iss.moex.com/iss/statistics/engines/futures/markets/indicativerates/securities.json"
     simple_date = date.strftime("%Y-%m-%d")
 
@@ -113,7 +133,20 @@ def get_sp500_index(date: datetime.datetime, stocks_list: List[str]) -> List[Dic
 
 
 def get_cards_usage_info(transactions_list) -> List[Dict[str, Any]]:
-    """"""
+    """
+    Агрегирует информацию по использованию карт: общая сумма трат и кэшбэк.
+
+    Args:
+        transactions_list: Список транзакций. Каждая транзакция - словарь с полями:
+            "Статус" (str), "Номер карты" (str),
+            "Сумма операции с округлением" (float), "Кэшбэк" (float)
+
+    Returns:
+        List[Dict[str, Any]]: Список словарей с информацией по картам:
+            last_digits (str): последние цифры карты,
+            total_spent (float): суммарные траты (округлено до 2 знаков),
+            cashback (float): суммарный кэшбэк (округлено до 2 знаков)
+    """
 
     def default_value():
         return {"total_spent": 0.0, "cashback": 0.0}
@@ -144,7 +177,18 @@ def get_cards_usage_info(transactions_list) -> List[Dict[str, Any]]:
 
 
 def get_top_n_transactions(transactions_list, n: int) -> List[Dict[str, Any]]:
-    """"""
+    """
+    Возвращает топ-N транзакций со статусом 'OK', отсортированных по убыванию суммы.
+
+    Args:
+        transactions_list: Список транзакций (каждая — словарь с полями "Статус", "Дата платежа" и др.).
+        n: Количество транзакций для возврата. Если n > длины списка, вернёт все подходящие.
+
+    Returns:
+        List[Dict[str, Any]]: Топ-N транзакций, где каждая имеет формат:
+        date (str), amount (float), category (str), description (str).
+        Сумма округляется до 2 знаков после запятой.
+    """
     top_transactions = []
 
     for transaction in transactions_list:
@@ -162,17 +206,27 @@ def get_top_n_transactions(transactions_list, n: int) -> List[Dict[str, Any]]:
 
 def get_main_page_data(date_time: str, transactions: Iterable[Optional[Dict[str, Any]]]) -> str:
     """
-    Функция принимающая на вход строку с датой и временем в формате YYYY-MM-DD HH:MM:SS и возвращающую
-    JSON-ответ со следующими данными:
+    Формирует сводные данные для главной страницы в формате JSON.
 
-    1) Приветствие в зависимости от текущего времени.
-    2) По каждой карте:
-        * последние 4 цифры карты;
-        * общая сумма расходов;
-        * кешбэк (1 рубль на каждые 100 рублей).
-    3) Топ-5 транзакций по сумме платежа.
-    4) Курс валют.
-    5) Стоимость акций из S&P500.
+    Для работы требуется файл "user_settings.json" лежащий в папке data в корне проекта.
+
+    Пример его структуры:
+        {
+        "user_currencies": ["USD", "EUR", ...],
+        "user_stocks": ["AAPL", "AMZN", ...]
+        }
+
+    Args:
+        date_time: Дата и время в формате "YYYY-MM-DD HH:MM:SS"
+        transactions: Итерируемый объект с транзакциями (может содержать None)
+
+    Returns:
+        str: JSON-строка с:
+            1. Приветствием (в зависимости от времени суток)
+            2. Информацией по картам: последние цифры, сумма расходов, кэшбэк (1% от суммы)
+            3. Топ-5 транзакций по сумме
+            4. Курсами валют (из user_settings.json)
+            5. Стоимостью акций S&P500 (из user_settings.json)
     """
     try:
         date = datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S")
@@ -208,10 +262,3 @@ def get_main_page_data(date_time: str, transactions: Iterable[Optional[Dict[str,
         logger.error(f"Непредвиденная ошибка: {str(e)}", exc_info=True)
         final_output = {"error": "Не удалось сформировать данные", "details": str(e)}
         return json.dumps(final_output, indent=2, ensure_ascii=False)
-
-
-# if __name__ == "__main__":
-#     path = Path(__file__).parent.parent / "data" / "operations.xlsx"
-#     transactions_ = get_data_from_excel(path)
-#     final_json = get_main_page_data("2020-01-10 22:45:11", transactions=transactions_)
-#     print(final_json)

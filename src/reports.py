@@ -33,7 +33,7 @@ def get_transactions_df(file_path: Path) -> Optional[pd.DataFrame]:
         return None
 
 
-# @backlogging(backlog_file_name="reports_log.json")
+@backlogging(backlog_file_name="reports_log.json")
 def spending_by_category(
     transactions: pd.DataFrame, category: str, date: Union[datetime.datetime, str] = datetime.datetime.now()
 ) -> Optional[Dict[str, Any]]:

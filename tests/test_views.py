@@ -1,8 +1,7 @@
 import datetime
 import json
-from pathlib import Path
 
-from src.views import get_main_page_data, get_greeting, get_currency_rates, get_sp500_index
+from src.views import get_currency_rates, get_greeting, get_main_page_data, get_sp500_index
 
 
 def test_get_greeting():
@@ -17,7 +16,7 @@ def test_get_greeting():
 
 
 def test_get_currency_rates_normal_work(mocker):
-    """ Тестируем нормальную работу. """
+    """Тестируем нормальную работу."""
     mock_response = {
         "securities": {
             "columns": ["secid", "rate", "clearing"],
@@ -25,13 +24,12 @@ def test_get_currency_rates_normal_work(mocker):
                 ["USD/RUB", 75.1234, "pk"],
                 ["EUR/RUB", 85.5678, "pk"],
                 ["GBP/RUB", 95.4321, "vk"],
-                ["CNY/RUB", 12.3456, "pk"]
-            ]
+                ["CNY/RUB", 12.3456, "pk"],
+            ],
         }
     }
     mocker.patch("requests.get").return_value.json.return_value = mock_response
 
-    # предотвращаем сохранение результатов декоратором в лог
     mocker.patch("src.decorators.json.dump")
 
     date = datetime.datetime(2023, 1, 1)
@@ -45,10 +43,10 @@ def test_get_currency_rates_normal_work(mocker):
 
 
 def test_get_sp500_index_normal_work(mocker):
-    """ Тестируем нормальную работу функции. """
+    """Тестируем нормальную работу функции."""
     responses = [
-        [{'symbol': 'AAPL', 'date': '2023-01-01', 'price': 175.43, 'volume': 123456}],
-        [{'symbol': 'MSFT', 'date': '2023-01-01', 'price': 250.12, 'volume': 789012}]
+        [{"symbol": "AAPL", "date": "2023-01-01", "price": 175.43, "volume": 123456}],
+        [{"symbol": "MSFT", "date": "2023-01-01", "price": 250.12, "volume": 789012}],
     ]
     responses_generator = (x for x in responses)
 
@@ -65,14 +63,13 @@ def test_get_sp500_index_normal_work(mocker):
     stocks = ["AAPL", "MSFT"]
     result = get_sp500_index(date, stocks)
 
-    # Проверки
     assert len(result) == 2
     assert {"stock": "AAPL", "price": 175.43} in result
     assert {"stock": "MSFT", "price": 250.12} in result
 
 
 def test_get_main_page_data_normal_work(mocker, more_complex_transactions):
-    """ Тестируем нормальную работу функции с мокировкой работы с API. """
+    """Тестируем нормальную работу функции с мокировкой работы с API."""
     mock_currency_rates = mocker.patch(
         "src.views.get_currency_rates", return_value=[{"currency": "USD", "rate": 61.3}]
     )
@@ -92,13 +89,10 @@ def test_get_main_page_data_normal_work(mocker, more_complex_transactions):
 
 
 def test_get_main_page_data_error(mocker, more_complex_transactions):
-    """ Тестируем работу функции при возбуждении ошибки. """
+    """Тестируем работу функции при возбуждении ошибки."""
     mocker.patch("src.views.json.load", return_value={})
 
     result = get_main_page_data("2020-01-10 22:45:11", more_complex_transactions)
     data = json.loads(result)
 
     assert data["error"] == "Не удалось сформировать данные"
-
-
-

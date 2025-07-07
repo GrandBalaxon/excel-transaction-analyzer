@@ -3,9 +3,11 @@ import json
 from src.services import calculate_category_cashback
 
 
-def test_calculate_category_cashback_normal_work(sample_transactions):
+def test_calculate_category_cashback_normal_work(mocker, sample_transactions):
     """Тестирование нормальной работы функции."""
     transactions = sample_transactions.to_dict(orient="records")
+
+    mocker.patch("src.decorators.json.dump")
 
     result_str = calculate_category_cashback(transactions, 2023)
     result_dict = json.loads(result_str)

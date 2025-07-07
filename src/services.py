@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 from math import isnan
-from typing import Any, Dict, Iterable, Union, Optional
+from typing import Any, Dict, Iterable, Optional, Union
 
 from src.decorators import backlogging
 
