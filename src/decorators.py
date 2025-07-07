@@ -11,7 +11,7 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-def backlogging(backlog_file_name: str = "backlogged_data.json") -> Callable[[Callable[P, T]], Callable[P, T]]:
+def backlogging(backlog_file_name: str = "application_log.json") -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
     Универсальный декоратор для кэширования результатов функций.
 

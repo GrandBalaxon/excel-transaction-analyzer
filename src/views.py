@@ -54,6 +54,17 @@ def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> Lis
 
     response = requests.get(base_url, params=params).json()
 
+    # получаем ответ формата ->
+    # {"securities": {
+    #     "metadata": {...},
+    #     "columns": ["tradedate", "tradetime", "secid", "rate", "clearing"],
+    #     "data": [
+    #         ["2021-03-19", "13:45:00", "CAD\/RUB", 59.14380, "pk"],
+    #         ["2021-03-19", "18:30:00", "CAD\/RUB", 59.26380, "vk"],
+    #         ...
+    #     ]
+    # },...}
+
     # преобразовываем полученный ответ в удобный DataFrame
     data = response["securities"]["data"]
     columns = response["securities"]["columns"]
@@ -185,8 +196,8 @@ def get_main_page_data(date_time: str, transactions: Iterable[Optional[Dict[str,
         return json.dumps(final_output, indent=2, ensure_ascii=False)
 
 
-if __name__ == "__main__":
-    path = Path(__file__).parent.parent / "data" / "operations.xlsx"
-    transactions_ = get_data_from_excel(path)
-    final_json = get_main_page_data("2020-01-10 22:45:11", transactions=transactions_)
-    print(final_json)
+# if __name__ == "__main__":
+#     path = Path(__file__).parent.parent / "data" / "operations.xlsx"
+#     transactions_ = get_data_from_excel(path)
+#     final_json = get_main_page_data("2020-01-10 22:45:11", transactions=transactions_)
+#     print(final_json)

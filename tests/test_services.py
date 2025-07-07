@@ -4,7 +4,7 @@ from src.services import calculate_category_cashback
 
 
 def test_calculate_category_cashback_normal_work(sample_transactions):
-    """ Тестирование нормальной работы функции. """
+    """Тестирование нормальной работы функции."""
     transactions = sample_transactions.to_dict(orient="records")
 
     result_str = calculate_category_cashback(transactions, 2023)
@@ -15,10 +15,8 @@ def test_calculate_category_cashback_normal_work(sample_transactions):
 
 
 def test_calculate_category_error_raised(mocker):
-    """ Тестирования функции при возбуждении ошибки. """
-    invalid_transactions = [
-        {"Некорректное": "поле"}
-    ]
+    """Тестирования функции при возбуждении ошибки."""
+    invalid_transactions = [{"Некорректное": "поле"}]
     mock_error = mocker.patch("src.services.logger.error")
 
     result = calculate_category_cashback(invalid_transactions, 2023)
