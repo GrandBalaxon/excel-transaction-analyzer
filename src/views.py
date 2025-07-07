@@ -82,15 +82,29 @@ def get_currency_rates(date: datetime.datetime, currency_list: List[str]) -> Lis
 
 @backlogging("views_log.json")
 def get_sp500_index(date: datetime.datetime, stocks_list: List[str]) -> List[Dict[str, Any]]:
-    """ """
+    """
+    Получает информацию о цене закрытия акций из списка S&P 500 на заданную дату.
+
+    Использует API financialmodelingprep.com для получения исторических данных о ценах акций.
+
+    Args:
+        date: Дата, за которую нужно получить данные.
+        stocks_list: Список тикеров акций (например, ['AAPL', 'MSFT']).
+
+    Returns:
+        List[Dict[str, Any]]: Список словарей, где каждый словарь содержит информацию о цене закрытия
+                                акции (тикер и цену). Например, [{'stock': 'AAPL', 'price': 125.43}, ...].
+    """
     base_url = "https://financialmodelingprep.com/stable/historical-price-eod/light"
     simple_date = date.strftime("%Y-%m-%d")
 
     stocks_info = []
 
     for stock in stocks_list:
+        logger.info(f"Работа со стоком: {stock}")
         params = {"symbol": stock, "apikey": API_KEY, "from": simple_date, "to": simple_date}
         response = requests.get(base_url, params=params).json()
+        logger.info(f"Полученный ответ: {response}")
         # получаем словарь вида: [{'symbol': 'AAPL', 'date': '2021-05-21', 'price': 125.43, 'volume': 79295436}]
         info = {"stock": stock, "price": response[0]["price"]}
         stocks_info.append(info)
