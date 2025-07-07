@@ -2,11 +2,9 @@ import datetime
 import json
 import logging
 from math import isnan
-from pathlib import Path
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Dict, Iterable, Union, Optional
 
 from src.decorators import backlogging
-from src.utils import get_data_from_excel
 
 logger = logging.getLogger("services")
 
@@ -34,7 +32,7 @@ def is_transaction_in_period(transaction_date: str, year: int, month: Union[int,
 @backlogging("services_log.json")
 def calculate_category_cashback(
     transactions: Iterable[Dict[str, Any]], year: int, month: Union[int, None] = None
-) -> str:
+) -> Optional[str]:
     """
     Вычисляет сумму кэшбэка по категориям за указанный период.
 
@@ -46,7 +44,7 @@ def calculate_category_cashback(
         month: Месяц для анализа (если None, анализируется весь год)
 
     Returns:
-        str: JSON-строка с категориями и суммами кэшбэка
+        str: JSON-строка с категориями и суммами кэшбэка | None при ошибке.
     """
     try:
         filtered_transactions = []
@@ -74,12 +72,4 @@ def calculate_category_cashback(
 
     except Exception as e:
         logger.error(f"Непредвиденная ошибка: {str(e)}", exc_info=True)
-        final_output = {"error": "Не удалось сформировать данные", "details": str(e)}
-        return json.dumps(final_output, indent=2, ensure_ascii=False)
-
-
-if __name__ == "__main__":
-    path = Path(__file__).parent.parent / "data" / "operations.xlsx"
-    transactions_ = get_data_from_excel(path)
-    final_json = calculate_category_cashback(transactions_, 2020)
-    print(final_json)
+        return None

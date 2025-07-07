@@ -5,23 +5,6 @@ import pytest
 from src.decorators import backlogging
 
 
-@pytest.fixture(autouse=True)
-def setup_mocks(mocker):
-    """Автоматически подменяет все внешние зависимости для каждого теста"""
-    # Мок для json.load с пустым словарём по умолчанию
-    mocker.patch("src.decorators.json.load", return_value={})
-
-    # Мок для json.dump
-    mocker.patch("src.decorators.json.dump")
-
-    # Мок для open и Path.touch
-    mocker.patch("src.decorators.Path.touch")
-
-    # Мок для hashlib.sha256 (чтобы тесты были детерминированы)
-    mock_sha256 = mocker.patch("src.decorators.hashlib.sha256")
-    mock_sha256.return_value.hexdigest.return_value = "mocked_hash"
-
-
 # Тестовая функция с декоратором
 @backlogging()
 def function_(a, b):
