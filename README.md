@@ -1,3 +1,98 @@
-```bash
-pytest --cov=src --cov-report=html
+# Анализатор транзакций Excel
+
+![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
+![Poetry](https://img.shields.io/badge/packaging-poetry-cyan.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
+## 📝 Описание
+
+Инструмент для анализа банковских транзакций из Excel-файлов с возможностью:
+- Генерации отчетов по категориям
+- Кэширования результатов
+- Анализа кэшбэка
+- Отслеживания курсов валют и акций
+
+## 🚀 Быстрый старт
+
+### Предварительные требования
+- Python 3.9 или новее
+- Установленный pip
+
+### Установка
+1. Установите Poetry:
+    ```bash
+    pip install poetry
+    ```
+2. Установите [Git](https://git-scm.com/downloads/win).
+3. Клонируйте репозиторий:
+    ```bash
+    git git@github.com:GrandBalaxon/excel-transaction-analyzer.git
+    ```
+    ```bash
+    cd excel-transaction-analyzer
+    ```
+4. Установите зависимости проекта:
+    ```bash
+    poetry install
+    ```
+
+## 🔑 Настройка проекта
+
+Для работы с данными акций S&P 500 требуется API-ключ от [financialmodelingprep.com](https://financialmodelingprep.com/):
+
+1. Зарегистрируйтесь на сайте и получите API-ключ
+2. Создайте файл `.env` в корне проекта
+3. Добавьте ключ в файл:
+   ```ini
+   API_KEY=ваш_ключ_здесь
+   ```
+4. Создайте файл `data/user_settings.json` с валютами и акциями:
+    ```json
+    {
+      "user_currencies": ["USD", "EUR"],
+      "user_stocks": ["AAPL", "MSFT"]
+    }
+    ```
+   
+## ⚙️ Технические детали
+
+### Работа с внешними API
+
+* Курсы валют (Московская Биржа): 
+
+    Автоматическое получение и фильтрация по RUB-парам
+
+* Данные акций S&P 500:
+
+    Исторические цены закрытия с кэшированием результатов
+
+### Особенности реализации
+```python
+@backlogging("views_log.json")  # Автоматическое кэширование в JSON
+def get_sp500_index(date: datetime, stocks_list: List[str]) -> List[Dict]:
+    """Получение цен акций с финансового API"""
+    # Реализация с обработкой ошибок и логированием
 ```
+
+### Логирование
+
+* Вся работа функций в проекте, а также запросы к API логируются в `logs/application.log`
+* Результаты работы функций работающих с внешним API (и других функций) автоматически кешируются, а кешированные данные хранятся в `views_log.json`
+
+## 🧪 Тестирование
+
+Тестирование проекта реализовано через `pytest`
+
+* Результаты тестов логируются в файле `logs/tests.log`
+* Запуск тестов
+    ```bash
+    pytest
+    ```
+* Создание html-отчета о покрытие проекта тестами. Отчет будет сгенерирован в папке `htmlcov` и храниться в файле с названием `index.html`.
+    ```bash
+    pytest --cov=src --cov-report=html
+    ```
+
+## 📜 Лицензия:
+
+Этот проект лицензирован по [лицензии MIT](LICENSE).
