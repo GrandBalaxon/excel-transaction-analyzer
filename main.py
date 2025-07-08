@@ -143,6 +143,9 @@ def main() -> None:
 
                 user_input = input("Пользователь: ")
                 if user_input:
+                    if standard_operations_file_flag:
+                        print("\nВременный рамки стандартного файла транзакций: 01.01.2018 - 31.12.2021")
+
                     year = int(input("\nВведите год: "))
                     month = int(input("Введите месяц: "))
                     day = int(input("Введите день: "))
