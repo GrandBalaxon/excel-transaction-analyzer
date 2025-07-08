@@ -64,7 +64,9 @@ def spending_by_category(
 
         # фильтрация по датам и категориям
         filtered_df = df.loc[
-            (df["Категория"] == category) & (start_date <= df["Дата операции"]) & (df["Дата операции"] <= end_date)
+            (df["Категория"].str.lower().str.contains(category.lower()))
+            & (start_date <= df["Дата операции"])
+            & (df["Дата операции"] <= end_date)
         ]
         logger.info(f"отфильтровано операций: {len(filtered_df)}")
 
