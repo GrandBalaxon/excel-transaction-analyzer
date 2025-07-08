@@ -3,7 +3,7 @@ import json
 import logging
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, ParamSpec, TypeVar
+from typing import Any, Callable, Dict, ParamSpec, TypeVar, cast
 
 logger = logging.getLogger("decorators")
 
@@ -49,7 +49,7 @@ def backlogging(backlog_file_name: str = "application_log.json") -> Callable[[Ca
             cache = backlog_dict[function.__name__]
 
             if key in cache and cache[key]:
-                return cache[key]
+                return cast(T, cache[key])
             else:
                 result = function(*args, **kwargs)
 

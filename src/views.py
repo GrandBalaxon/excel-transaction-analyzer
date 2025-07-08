@@ -33,7 +33,7 @@ def get_greeting(date_time: datetime.datetime) -> str:
         return "Доброй ночи"
 
 
-def is_in_time_period(transaction_date, date_to_look_for) -> bool:
+def is_in_time_period(transaction_date: str, date_to_look_for: datetime.datetime) -> bool:
     """
     Проверяет, попадает ли транзакция в указанный временной период.
 
@@ -132,7 +132,7 @@ def get_sp500_index(date: datetime.datetime, stocks_list: List[str]) -> List[Dic
     return stocks_info
 
 
-def get_cards_usage_info(transactions_list) -> List[Dict[str, Any]]:
+def get_cards_usage_info(transactions_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Агрегирует информацию по использованию карт: общая сумма трат и кэшбэк.
 
@@ -148,7 +148,7 @@ def get_cards_usage_info(transactions_list) -> List[Dict[str, Any]]:
             cashback (float): суммарный кэшбэк (округлено до 2 знаков)
     """
 
-    def default_value():
+    def default_value() -> Dict[str, float]:
         return {"total_spent": 0.0, "cashback": 0.0}
 
     cards_info = defaultdict(default_value)
@@ -176,7 +176,7 @@ def get_cards_usage_info(transactions_list) -> List[Dict[str, Any]]:
     return cards
 
 
-def get_top_n_transactions(transactions_list, n: int) -> List[Dict[str, Any]]:
+def get_top_n_transactions(transactions_list: List[Dict[str, Any]], n: int) -> List[Dict[str, Any]]:
     """
     Возвращает топ-N транзакций со статусом 'OK', отсортированных по убыванию суммы.
 
