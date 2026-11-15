@@ -1,8 +1,14 @@
 # Анализатор транзакций Excel
 
-![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
-![Poetry](https://img.shields.io/badge/packaging-poetry-cyan.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+[![CI](https://github.com/GrandBalaxon/excel-transaction-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/GrandBalaxon/excel-transaction-analyzer/actions/workflows/ci.yml)
+[![Coverage](https://raw.githubusercontent.com/GrandBalaxon/excel-transaction-analyzer/python-coverage-comment-action-data/badge.svg)](https://github.com/GrandBalaxon/excel-transaction-analyzer/tree/python-coverage-comment-action-data)
+[![License](https://img.shields.io/badge/license-MIT-3DA639.svg?logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.14-3776AB.svg?logo=python&logoColor=white)](https://www.python.org)
+
+[![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
+[![Poetry](https://img.shields.io/badge/Poetry-60A5FA?style=flat&logo=poetry&logoColor=white)](https://python-poetry.org/)
+[![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=flat&logo=pytest&logoColor=white)](https://pytest.org/)
+[![mypy](https://img.shields.io/badge/mypy-strict-blue?style=flat&logo=python&logoColor=white)](https://mypy-lang.org/)
 
 ## 📝 Описание
 

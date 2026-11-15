@@ -27,11 +27,14 @@ build-backend = "poetry.core.masonry.api"
 isort = "^6.0.1"
 mypy = "^1.16.1"
 flake8 = "^7.2.0"
+types-python-dateutil = "^2.9.0.20261104"
+pandas-stubs = ">=2.3.3,<2.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
 pytest-cov = "^6.1.1"
 pytest-mock = "^3.14.1"
+coverage = "^7.17.3"
 
 [tool.isort]
 # максимальная длина строки
@@ -45,3 +48,22 @@ check_untyped_defs = true
 strict = true
 warn_unreachable = true
 exclude = 'venv'
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__init__.py",
+    "*/venv/*",
+    "*/.venv/*",
+]
+relative_files = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true

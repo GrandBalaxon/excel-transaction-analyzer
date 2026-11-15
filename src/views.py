@@ -151,7 +151,7 @@ def get_cards_usage_info(transactions_list: List[Dict[str, Any]]) -> List[Dict[s
     def default_value() -> Dict[str, float]:
         return {"total_spent": 0.0, "cashback": 0.0}
 
-    cards_info = defaultdict(default_value)
+    cards_info: dict[str, dict[str, float]] = defaultdict(default_value)
     cards = []
 
     for transaction in transactions_list:
@@ -231,7 +231,9 @@ def get_main_page_data(date_time: str, transactions: Iterable[Optional[Dict[str,
     try:
         date = datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S")
 
-        filtered_transactions = [x for x in transactions if is_in_time_period(x["Дата операции"], date)]
+        filtered_transactions = [
+            x for x in transactions if x is not None and is_in_time_period(x["Дата операции"], date)
+        ]
         logger.info(f"Отфильтрованы {len(filtered_transactions)} операций подходящих по дате.")
 
         cards = get_cards_usage_info(filtered_transactions)
