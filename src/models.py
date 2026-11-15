@@ -1,0 +1,60 @@
+import datetime
+
+from sqlalchemy import Date, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from src.database import Base
+
+
+class DimCard(Base):
+    """Справочник банковских карт."""
+    __tablename__ = "dim_cards"
+
+    card_id: Mapped[str] = mapped_column(String(20), primary_key=True)
+    last_digits: Mapped[str] = mapped_column(String(4))
+
+    transactions: Mapped[list["FactTransaction"]] = relationship(back_populates="card")
+
+
+class DimCategory(Base):
+    """Справочник категорий трат."""
+    __tablename__ = "dim_categories"
+
+    category_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+
+    transactions: Mapped[list["FactTransaction"]] = relationship(back_populates="category")
+
+
+class DimDate(Base):
+    """Справочник дат (Календарь)."""
+    __tablename__ = "dim_dates"
+
+    date_id: Mapped[datetime.date] = mapped_column(Date, primary_key=True)
+    year: Mapped[int] = mapped_column(Integer)
+    month: Mapped[int] = mapped_column(Integer)
+    day: Mapped[int] = mapped_column(Integer)
+    weekday: Mapped[int] = mapped_column(Integer)
+
+    transactions: Mapped[list["FactTransaction"]] = relationship(back_populates="date")
+
+
+class FactTransaction(Base):
+    """Таблица фактов (сами транзакции)."""
+    __tablename__ = "fact_transactions"
+
+    transaction_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    date_id: Mapped[datetime.date] = mapped_column(ForeignKey("dim_dates.date_id"))
+    card_id: Mapped[str | None] = mapped_column(ForeignKey("dim_cards.card_id"))
+    category_id: Mapped[int] = mapped_column(ForeignKey("dim_categories.category_id"))
+
+    amount: Mapped[float] = mapped_column(Float)
+    cashback: Mapped[float] = mapped_column(Float, default=0.0)
+
+    status: Mapped[str] = mapped_column(String(20))
+    description: Mapped[str] = mapped_column(String(255))
+
+    date: Mapped["DimDate"] = relationship(back_populates="transactions")
+    card: Mapped["DimCard" | None] = relationship(back_populates="transactions")
+    category: Mapped["DimCategory"] = relationship(back_populates="transactions")
