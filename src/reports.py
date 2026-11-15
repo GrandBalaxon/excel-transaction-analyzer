@@ -1,7 +1,7 @@
 import datetime
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, cast
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
@@ -11,7 +11,7 @@ from src.decorators import backlogging
 logger = logging.getLogger("reports")
 
 
-def get_transactions_df(file_path: Path) -> Optional[pd.DataFrame]:
+def get_transactions_df(file_path: Path) -> pd.DataFrame | None:
     """
     Загружает транзакции из Excel-файла в DataFrame.
 
@@ -35,8 +35,8 @@ def get_transactions_df(file_path: Path) -> Optional[pd.DataFrame]:
 
 @backlogging(backlog_file_name="reports_log.json")
 def spending_by_category(
-    transactions: pd.DataFrame, category: str, date: Union[datetime.datetime, str] = datetime.datetime.now()
-) -> Optional[Dict[str, Any]]:
+    transactions: pd.DataFrame, category: str, date: datetime.datetime | str = datetime.datetime.now()
+) -> list[dict[str, Any]] | None:
     """
     Фильтрует транзакции по категории и временному диапазону (последние 3 месяца).
 
@@ -75,7 +75,7 @@ def spending_by_category(
             filtered_df["Дата операции"], errors="coerce"
         ).dt.strftime("%d.%m.%Y %H:%M:%S")
 
-        return filtered_df.to_dict(orient="records")
+        return cast(list[dict[str, Any]], filtered_df.to_dict(orient="records"))
 
     except Exception as e:
         logger.error(f"Возникла непредвиденная ошибка: {str(e)}", exc_info=True)

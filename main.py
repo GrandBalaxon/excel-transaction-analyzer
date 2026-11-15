@@ -114,13 +114,13 @@ def main() -> None:
 
             year = int(input("Введите год: "))
             month_str = input("Пользователь: Введите месяц (или оставьте пустым для всего года): ")
-            month = int(month_str) if month_str else None
+            month_filter: int | None = int(month_str) if month_str else None
 
             transactions_list = get_data_from_excel(excel_file_path)
-            cashback_data = calculate_category_cashback(transactions_list, year, month)
-            data = json.loads(cashback_data)
+            cashback_data = calculate_category_cashback(transactions_list, year, month_filter)
 
             if cashback_data:
+                data = json.loads(cashback_data)
                 print(
                     "\nСуммарный кэшбэк в указанный период по категориям:\n",
                     json.dumps(data, indent=4, ensure_ascii=False)
