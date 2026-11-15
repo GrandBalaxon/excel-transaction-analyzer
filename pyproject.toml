@@ -54,10 +54,11 @@ module = "tests.*"
 ignore_errors = true
 
 [tool.coverage.run]
-source = ["src", "main.py"]
+source = ["src"]
 omit = [
     "*/tests/*",
     "*/test_*.py",
+    "*/__init__.py",
     "*/venv/*",
     "*/.venv/*",
 ]
