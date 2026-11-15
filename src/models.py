@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 
 from sqlalchemy import Date, Float, ForeignKey, Integer, String
@@ -13,7 +15,7 @@ class DimCard(Base):
     card_id: Mapped[str] = mapped_column(String(20), primary_key=True)
     last_digits: Mapped[str] = mapped_column(String(4))
 
-    transactions: Mapped[list["FactTransaction"]] = relationship(back_populates="card")
+    transactions: Mapped[list[FactTransaction]] = relationship(back_populates="card")
 
 
 class DimCategory(Base):
@@ -23,7 +25,7 @@ class DimCategory(Base):
     category_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
 
-    transactions: Mapped[list["FactTransaction"]] = relationship(back_populates="category")
+    transactions: Mapped[list[FactTransaction]] = relationship(back_populates="category")
 
 
 class DimDate(Base):
@@ -36,7 +38,7 @@ class DimDate(Base):
     day: Mapped[int] = mapped_column(Integer)
     weekday: Mapped[int] = mapped_column(Integer)
 
-    transactions: Mapped[list["FactTransaction"]] = relationship(back_populates="date")
+    transactions: Mapped[list[FactTransaction]] = relationship(back_populates="date")
 
 
 class FactTransaction(Base):
@@ -55,6 +57,6 @@ class FactTransaction(Base):
     status: Mapped[str] = mapped_column(String(20))
     description: Mapped[str] = mapped_column(String(255))
 
-    date: Mapped["DimDate"] = relationship(back_populates="transactions")
-    card: Mapped["DimCard" | None] = relationship(back_populates="transactions")
-    category: Mapped["DimCategory"] = relationship(back_populates="transactions")
+    date: Mapped[DimDate] = relationship(back_populates="transactions")
+    card: Mapped[DimCard | None] = relationship(back_populates="transactions")
+    category: Mapped[DimCategory] = relationship(back_populates="transactions")
