@@ -32,13 +32,60 @@ def extract(file_path: Path) -> pd.DataFrame | None:
 
 
 def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """
-    Трансформация (Transform) данных.
-    Очистка, разделение на справочники и таблицу фактов.
-    """
+    """Трансформация (Transform) данных."""
     logger.info("Начинаем трансформацию данных...")
-    pass
-    return {}
+
+    # 1. Очистка: убираем FAILED и дубликаты
+    df = df[df["Статус"] == "OK"].copy()
+    df = df.drop_duplicates()
+    logger.info(f"Осталось {len(df)} строк после фильтрации (OK).")
+
+    # 2. Очистка типов данных
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
+    df["Кэшбэк"] = df["Кэшбэк"].fillna(0.0)
+    df["Номер карты"] = df["Номер карты"].fillna("Unknown")
+    df["Категория"] = df["Категория"].fillna("Unknown")
+
+    # 3. Создаем справочник DimCard
+    dim_cards = df[["Номер карты"]].drop_duplicates().rename(columns={"Номер карты": "card_id"})
+    dim_cards["last_digits"] = dim_cards["card_id"].apply(
+        lambda x: x.replace("*", "") if x != "Unknown" else "0000"
+    )
+
+    # 4. Создаем справочник DimCategory
+    dim_categories = df[["Категория"]].drop_duplicates().rename(columns={"Категория": "name"})
+
+    # 5. Создаем справочник DimDate
+    df["date_id"] = df["Дата операции"].dt.date
+    dim_dates = df[["date_id"]].drop_duplicates()
+    dim_dates["year"] = pd.to_datetime(dim_dates["date_id"]).dt.year
+    dim_dates["month"] = pd.to_datetime(dim_dates["date_id"]).dt.month
+    dim_dates["day"] = pd.to_datetime(dim_dates["date_id"]).dt.day
+    dim_dates["weekday"] = pd.to_datetime(dim_dates["date_id"]).dt.weekday
+
+    # 6. Создаем таблицу фактов FactTransaction
+    facts = df[[
+        "date_id", "Номер карты", "Категория",
+        "Сумма операции с округлением", "Кэшбэк", "Статус", "Описание"
+    ]].copy()
+
+    facts.rename(columns={
+        "Номер карты": "card_id",
+        "Категория": "category_name",
+        "Сумма операции с округлением": "amount",
+        "Кэшбэк": "cashback",
+        "Статус": "status",
+        "Описание": "description"
+    }, inplace=True)
+
+    logger.info("Трансформация завершена. Данные готовы к загрузке.")
+
+    return {
+        "dim_cards": dim_cards,
+        "dim_categories": dim_categories,
+        "dim_dates": dim_dates,
+        "facts": facts
+    }
 
 
 def load(tables: dict[str, pd.DataFrame], db_engine: Engine) -> None:
