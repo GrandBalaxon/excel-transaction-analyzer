@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 import pandas as pd
+from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from src.database import engine
@@ -90,8 +91,26 @@ def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 def load(tables: dict[str, pd.DataFrame], db_engine: Engine) -> None:
     """Загрузка (Load) данных в PostgreSQL."""
-    logger.info("Начинаем загрузку данных в базу...")
-    pass
+    logger.info("Начинаем загрузку в PostgreSQL...")
+
+    with db_engine.begin() as conn:
+        conn.execute(
+            text("TRUNCATE TABLE fact_transactions, dim_dates, dim_cards, dim_categories RESTART IDENTITY CASCADE;")
+        )
+    logger.info("Старые данные в таблицах очищены.")
+
+    tables["dim_cards"].to_sql("dim_cards", db_engine, if_exists="append", index=False)
+    tables["dim_categories"].to_sql("dim_categories", db_engine, if_exists="append", index=False)
+    tables["dim_dates"].to_sql("dim_dates", db_engine, if_exists="append", index=False)
+    logger.info("Справочники (карты, категории, даты) успешно загружены.")
+
+    categories_db = pd.read_sql('SELECT category_id, name FROM dim_categories', db_engine)
+
+    facts = tables["facts"].merge(categories_db, left_on='category_name', right_on='name')
+    facts = facts.drop(columns=['category_name', 'name'])
+
+    facts.to_sql("fact_transactions", db_engine, if_exists="append", index=False)
+    logger.info(f"Успешно загружено {len(facts)} строк в fact_transactions.")
 
 
 def run_pipeline(file_path: Path) -> None:
