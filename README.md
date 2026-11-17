@@ -1,6 +1,6 @@
 # Анализатор транзакций Excel
 
-[![CI](https://github.com/GrandBalaxon/excel-transaction-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/GrandBalaxon/excel-transaction-analyzer/actions/workflows/ci.yml)
+[![CI](https://github.com/GrandBalaxon/excel-transaction-analyzer/actions/workflows/etl_pipeline_ci.yml/badge.svg)](https://github.com/GrandBalaxon/excel-transaction-analyzer/actions/workflows/etl_pipeline_ci.yml)
 [![Coverage](https://raw.githubusercontent.com/GrandBalaxon/excel-transaction-analyzer/python-coverage-comment-action-data/badge.svg)](https://github.com/GrandBalaxon/excel-transaction-analyzer/tree/python-coverage-comment-action-data)
 [![License](https://img.shields.io/badge/license-MIT-3DA639.svg?logo=opensourceinitiative&logoColor=white)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.14-3776AB.svg?logo=python&logoColor=white)](https://www.python.org)
