@@ -1,6 +1,11 @@
-name: Django CI
+name: ETL Pipeline CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    types: [opened, reopened]
+    branches: [ "main", "develop" ]
 
 permissions:
   contents: write
@@ -51,6 +56,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: transactions_db
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Check out Code
         uses: actions/checkout@v4
@@ -79,6 +99,12 @@ jobs:
         run: poetry install --no-interaction --no-root --with dev
 
       - name: Run tests with coverage
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: transactions_db
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5433
         run: poetry run coverage run -m pytest
 
       - name: Show coverage report in logs
