@@ -49,7 +49,7 @@ def get_db() -> Generator[Session, None, None]:
 def init_db() -> None:
     """Создает все таблицы в базе данных, если они еще не созданы."""
     # Локальный импорт, чтобы SQLAlchemy "увидел" модели перед созданием таблиц
-    from src import models # noqa: F401
+    from src import models  # noqa: F401
 
     logger.info("Инициализация схемы БД (создание таблиц)...")
     Base.metadata.create_all(bind=engine)
