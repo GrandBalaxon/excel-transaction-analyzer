@@ -131,8 +131,3 @@ def run_pipeline(file_path: Path) -> None:
         load(transformed_data, engine)
 
     logger.info("=== ETL-ПАЙПЛАЙН ЗАВЕРШЕН ===")
-
-
-if __name__ == "__main__":
-    file_path = Path(__file__).parent.parent / "data" / "operations.xlsx"
-    run_pipeline(file_path)

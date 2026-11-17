@@ -40,13 +40,13 @@ jobs:
         run: poetry install --no-interaction --no-root --with lint
 
       - name: Run Flake8
-        run: poetry run flake8 src tests
+        run: poetry run flake8 src tests cli.py
 
       - name: Check import order with isort
-        run: poetry run isort --check-only src tests
+        run: poetry run isort --check-only src tests cli.py
 
       - name: Type check with mypy
-        run: poetry run mypy src
+        run: poetry run mypy src cli.py
 
   test:
     runs-on: ubuntu-latest
