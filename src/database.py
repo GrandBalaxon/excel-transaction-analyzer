@@ -4,6 +4,7 @@ from typing import Generator
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 logger = logging.getLogger("database")
@@ -20,13 +21,20 @@ DB_PORT = os.getenv("POSTGRES_PORT", "5433")
 # Формируем строку подключения (URL)
 DATABASE_URL = f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# Создаем движок (Engine)
-try:
-    engine = create_engine(DATABASE_URL, echo=False)
-    logger.info("Движок SQLAlchemy успешно создан.")
-except Exception as e:
-    logger.error(f"Ошибка при создании движка: {e}")
-    raise
+
+def create_db_engine(database_url: str) -> Engine:
+    """Создает движок SQLAlchemy для указанной базы данных."""
+    try:
+        db_engine = create_engine(database_url, echo=False)
+        logger.info("Движок SQLAlchemy успешно создан.")
+        return db_engine
+    except Exception as e:
+        logger.exception(f"Ошибка при создании движка БД: {e}")
+        raise
+
+
+# Создаем production Engine
+engine = create_db_engine(DATABASE_URL)
 
 # Создаем фабрику сессий
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -46,10 +54,10 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def init_db() -> None:
+def init_db(db_engine: Engine) -> None:
     """Создает все таблицы в базе данных, если они еще не созданы."""
     # Локальный импорт, чтобы SQLAlchemy "увидел" модели перед созданием таблиц
     from src import models  # noqa: F401
 
     logger.info("Инициализация схемы БД (создание таблиц)...")
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=db_engine)
