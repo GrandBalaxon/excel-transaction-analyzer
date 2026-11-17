@@ -2,8 +2,10 @@ services:
   db:
     image: postgres:16
     container_name: transaction_db
-    env_file:
-      - ./.env.docker
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: transaction_db
     ports:
       - "5433:5432"
     volumes:
