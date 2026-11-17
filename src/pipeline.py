@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-from src.database import engine
+from src.database import engine, init_db
 
 logger = logging.getLogger("pipeline")
 
@@ -67,13 +67,13 @@ def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     # 6. Создаем таблицу фактов FactTransaction
     facts = df[[
         "date_id", "Номер карты", "Категория",
-        "Сумма операции с округлением", "Кэшбэк", "Статус", "Описание"
+        "Сумма операции", "Кэшбэк", "Статус", "Описание"
     ]].copy()
 
     facts.rename(columns={
         "Номер карты": "card_id",
         "Категория": "category_name",
-        "Сумма операции с округлением": "amount",
+        "Сумма операции": "amount",
         "Кэшбэк": "cashback",
         "Статус": "status",
         "Описание": "description"
@@ -116,6 +116,9 @@ def load(tables: dict[str, pd.DataFrame], db_engine: Engine) -> None:
 def run_pipeline(file_path: Path) -> None:
     """Точка входа для запуска всего ETL-процесса."""
     logger.info("=== ЗАПУСК ETL-ПАЙПЛАЙНА ===")
+
+    # 0. Начальное создание таблиц
+    init_db()
 
     # 1. Extract
     df = extract(file_path)

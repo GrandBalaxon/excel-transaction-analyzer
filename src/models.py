@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import datetime
+from decimal import Decimal
 
-from sqlalchemy import Date, Float, ForeignKey, Integer, String
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
@@ -51,8 +52,8 @@ class FactTransaction(Base):
     card_id: Mapped[str | None] = mapped_column(ForeignKey("dim_cards.card_id"))
     category_id: Mapped[int] = mapped_column(ForeignKey("dim_categories.category_id"))
 
-    amount: Mapped[float] = mapped_column(Float)
-    cashback: Mapped[float] = mapped_column(Float, default=0.0)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    cashback: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
 
     status: Mapped[str] = mapped_column(String(20))
     description: Mapped[str] = mapped_column(String(255))
