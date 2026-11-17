@@ -1,20 +1,24 @@
 import argparse
 import logging
+import sys
 from pathlib import Path
 
 from src.pipeline import run_pipeline
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(funcName)s - %(lineno)s - %(levelname)s - %(message)s"
-)
+logger = logging.getLogger(__name__)
 
 
-def main() -> None:
+def main() -> int:
     """Точка входа для CLI."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(funcName)s - %(lineno)s - %(levelname)s - %(message)s",
+        stream=sys.stdout
+    )
+
     parser = argparse.ArgumentParser(description="Transactions ETL Pipeline")
 
-    # Создаем подкоманды (run, validate и т.д.)
+    # Создаем подкоманды
     subparsers = parser.add_subparsers(dest="command", required=True, help="Available commands")
 
     # Команда 'run' для запуска пайплайна
@@ -28,13 +32,19 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.command == "run":
-        file_path = Path(args.file)
-        if not file_path.exists():
-            logging.error(f"File not found: {file_path}")
-            return
-        run_pipeline(file_path)
+    try:
+        if args.command == "run":
+            file_path = Path(args.file)
+            if not file_path.exists():
+                logger.error(f"File not found: {file_path}")
+                return 1
+            run_pipeline(file_path)
+    except Exception:
+        logger.exception("Pipeline failed with an unexpected error")
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
