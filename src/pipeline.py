@@ -134,6 +134,6 @@ def run_pipeline(file_path: Path, db_engine: Engine | None = None) -> None:
 
     # 3. Load
     if transformed_data:
-        load(transformed_data, engine)
+        load(transformed_data, target_engine)
 
     logger.info("=== ETL-ПАЙПЛАЙН ЗАВЕРШЕН ===")
