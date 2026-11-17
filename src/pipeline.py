@@ -113,12 +113,15 @@ def load(tables: dict[str, pd.DataFrame], db_engine: Engine) -> None:
     logger.info(f"Успешно загружено {len(facts)} строк в fact_transactions.")
 
 
-def run_pipeline(file_path: Path) -> None:
+def run_pipeline(file_path: Path, db_engine: Engine | None = None) -> None:
     """Точка входа для запуска всего ETL-процесса."""
     logger.info("=== ЗАПУСК ETL-ПАЙПЛАЙНА ===")
 
+    # Используем переданный Engine или production Engine по умолчанию
+    target_engine = db_engine if db_engine is not None else engine
+
     # 0. Начальное создание таблиц
-    init_db()
+    init_db(target_engine)
 
     # 1. Extract
     df = extract(file_path)
@@ -131,6 +134,6 @@ def run_pipeline(file_path: Path) -> None:
 
     # 3. Load
     if transformed_data:
-        load(transformed_data, engine)
+        load(transformed_data, target_engine)
 
     logger.info("=== ETL-ПАЙПЛАЙН ЗАВЕРШЕН ===")
