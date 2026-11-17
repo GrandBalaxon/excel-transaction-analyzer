@@ -11,4 +11,4 @@ WITH RankedTransactions AS (
 SELECT category_name, description, ABS(amount) AS amount
 FROM RankedTransactions
 WHERE rn <= 3
-ORDER BY category_name, amount ASC;
+ORDER BY category_name, amount DESC;
