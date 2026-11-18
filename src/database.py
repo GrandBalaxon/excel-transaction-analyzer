@@ -10,41 +10,41 @@ logger = logging.getLogger("database")
 
 load_dotenv()
 
-# Получаем данные для подключения
+# Read connection settings
 DB_USER = os.getenv("POSTGRES_USER", "postgres")
 DB_PASS = os.getenv("POSTGRES_PASSWORD", "postgres")
 DB_NAME = os.getenv("POSTGRES_DB", "transactions_db")
 DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
 DB_PORT = os.getenv("POSTGRES_PORT", "5433")
 
-# Формируем строку подключения (URL)
+# Build the connection URL
 DATABASE_URL = f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
 def create_db_engine(database_url: str) -> Engine:
-    """Создает движок SQLAlchemy для указанной базы данных."""
+    """Create a SQLAlchemy engine for the given database."""
     try:
         db_engine = create_engine(database_url, echo=False)
-        logger.info("Движок SQLAlchemy успешно создан.")
+        logger.info("SQLAlchemy engine created.")
         return db_engine
     except Exception as e:
-        logger.exception(f"Ошибка при создании движка БД: {e}")
+        logger.exception(f"Failed to create the database engine: {e}")
         raise
 
 
-# Создаем production Engine
+# Create the production engine
 engine = create_db_engine(DATABASE_URL)
 
 
 class Base(DeclarativeBase):
-    """Базовый класс для будущих моделей (таблиц)."""
+    """Base class for all table models."""
     pass
 
 
 def init_db(db_engine: Engine) -> None:
-    """Создает все таблицы в базе данных, если они еще не созданы."""
-    # Локальный импорт, чтобы SQLAlchemy "увидел" модели перед созданием таблиц
+    """Create all tables in the database if they do not exist yet."""
+    # Local import so that SQLAlchemy registers the models before creating tables
     from src import models  # noqa: F401
 
-    logger.info("Инициализация схемы БД (создание таблиц)...")
+    logger.info("Initializing database schema (creating tables)...")
     Base.metadata.create_all(bind=db_engine)

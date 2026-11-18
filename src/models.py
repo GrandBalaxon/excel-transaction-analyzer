@@ -10,7 +10,7 @@ from src.database import Base
 
 
 class DimCard(Base):
-    """Справочник банковских карт."""
+    """Bank card dimension."""
     __tablename__ = "dim_cards"
 
     card_id: Mapped[str] = mapped_column(String(20), primary_key=True)
@@ -20,7 +20,7 @@ class DimCard(Base):
 
 
 class DimCategory(Base):
-    """Справочник категорий трат."""
+    """Spending category dimension."""
     __tablename__ = "dim_categories"
 
     category_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -30,7 +30,7 @@ class DimCategory(Base):
 
 
 class DimDate(Base):
-    """Справочник дат (Календарь)."""
+    """Date dimension (calendar)."""
     __tablename__ = "dim_dates"
 
     date_id: Mapped[datetime.date] = mapped_column(Date, primary_key=True)
@@ -43,7 +43,7 @@ class DimDate(Base):
 
 
 class FactTransaction(Base):
-    """Таблица фактов (сами транзакции)."""
+    """Fact table (the transactions themselves)."""
     __tablename__ = "fact_transactions"
 
     transaction_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

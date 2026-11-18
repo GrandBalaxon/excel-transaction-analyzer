@@ -14,7 +14,7 @@ SQL_DIR = Path(__file__).parent.parent / "sql"
 
 @pytest.fixture
 def sql_transactions_df(raw_transactions_df: pd.DataFrame) -> pd.DataFrame:
-    """Расширяет исходные тестовые данные операциями для проверки SQL-запросов."""
+    """Extend the base test data with operations for testing SQL queries."""
 
     additional_transactions = pd.DataFrame([
         {
@@ -125,7 +125,7 @@ def sql_transactions_df(raw_transactions_df: pd.DataFrame) -> pd.DataFrame:
             "Категория": "Развлечения",
             "Описание": "Возврат"
         },
-        # Операция в USD, платеж в RUB
+        # Operation in USD, payment in RUB
         {
             "Дата операции": "05.12.2021 10:00:00",
             "Номер карты": "*7197",
@@ -138,7 +138,7 @@ def sql_transactions_df(raw_transactions_df: pd.DataFrame) -> pd.DataFrame:
             "Категория": "Супермаркеты",
             "Описание": "Валютная операция USD"
         },
-        # Операция в RUB, платеж в CNY
+        # Operation in RUB, payment in CNY
         {
             "Дата операции": "05.12.2021 11:00:00",
             "Номер карты": "*7197",
@@ -151,7 +151,7 @@ def sql_transactions_df(raw_transactions_df: pd.DataFrame) -> pd.DataFrame:
             "Категория": "Супермаркеты",
             "Описание": "Валютная операция RUB"
         },
-        # Операция и платеж в CNY
+        # Operation and payment in CNY
         {
             "Дата операции": "05.12.2021 12:00:00",
             "Номер карты": "*7197",
@@ -174,19 +174,19 @@ def sql_transactions_df(raw_transactions_df: pd.DataFrame) -> pd.DataFrame:
 
 @pytest.fixture
 def populated_engine(test_engine: Engine, sql_transactions_df: pd.DataFrame) -> Engine:
-    """Заполняет тестовую базу данными для проверки SQL-запросов."""
+    """Fill the test database with data for testing SQL queries."""
 
-    # Преобразуем исходные данные в структуру таблиц PostgreSQL
+    # Transform the raw data into the PostgreSQL table structure
     tables = transform(sql_transactions_df)
 
-    # Загружаем данные исключительно в тестовую базу
+    # Load the data into the test database only
     load(tables, test_engine)
 
     return test_engine
 
 
 def execute_sql_query(db_engine: Engine, filename: str) -> list[tuple]:
-    """Выполняет SQL-запрос из файла и возвращает результат."""
+    """Run a SQL query from a file and return the result."""
 
     query = (SQL_DIR / filename).read_text(encoding="utf-8")
 
@@ -196,7 +196,7 @@ def execute_sql_query(db_engine: Engine, filename: str) -> list[tuple]:
 
 
 def test_top_3_expenses_per_category(populated_engine: Engine) -> None:
-    """Проверяет получение трех крупнейших расходов в каждой категории."""
+    """Check the three largest expenses in each category."""
 
     result = execute_sql_query(
         populated_engine,
@@ -216,7 +216,7 @@ def test_top_3_expenses_per_category(populated_engine: Engine) -> None:
 
 
 def test_running_total_expenses(populated_engine: Engine) -> None:
-    """Проверяет расчет ежедневных расходов и накопительного итога."""
+    """Check daily expenses and the running total."""
 
     result = execute_sql_query(
         populated_engine,
@@ -236,7 +236,7 @@ def test_running_total_expenses(populated_engine: Engine) -> None:
 
 
 def test_category_share_december_2021(populated_engine: Engine) -> None:
-    """Проверяет расчет доли категорий в расходах декабря 2021 года."""
+    """Check the share of each category in December 2021 expenses."""
 
     result = execute_sql_query(
         populated_engine,

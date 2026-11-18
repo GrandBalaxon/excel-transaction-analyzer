@@ -36,7 +36,7 @@ pytest-mock = "^3.14.1"
 coverage = "^7.17.3"
 
 [tool.isort]
-# максимальная длина строки
+# maximum line length
 line_length = 119
 
 [tool.mypy]

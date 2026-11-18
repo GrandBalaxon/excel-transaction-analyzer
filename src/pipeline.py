@@ -12,51 +12,51 @@ logger = logging.getLogger("pipeline")
 
 def extract(file_path: Path) -> pd.DataFrame | None:
     """
-    Извлечение (Extract) данных из Excel-файла.
+    Extract data from an Excel file.
     """
-    logger.info(f"Начинаем чтение файла: {file_path}")
+    logger.info(f"Reading file: {file_path}")
     try:
         df = pd.read_excel(file_path)
 
         if df.empty:
-            logger.warning("Файл пуст.")
+            logger.warning("The file is empty.")
             return None
 
-        logger.info(f"Успешно прочитано {len(df)} строк.")
+        logger.info(f"Read {len(df)} rows.")
         return df
     except FileNotFoundError:
-        logger.error(f"Файл не найден: {file_path}")
+        logger.error(f"File not found: {file_path}")
         return None
     except Exception as e:
-        logger.error(f"Ошибка при чтении Excel: {e}")
+        logger.error(f"Failed to read the Excel file: {e}")
         return None
 
 
 def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Трансформация (Transform) данных."""
-    logger.info("Начинаем трансформацию данных...")
+    """Transform raw data into dimension and fact tables."""
+    logger.info("Transforming data...")
 
-    # 1. Очистка: убираем FAILED и дубликаты
+    # 1. Cleaning: drop FAILED operations and duplicates
     df = df[df["Статус"] == "OK"].copy()
     df = df.drop_duplicates()
-    logger.info(f"Осталось {len(df)} строк после фильтрации (OK).")
+    logger.info(f"{len(df)} rows left after filtering (status OK).")
 
-    # 2. Очистка типов данных
+    # 2. Fix data types and fill missing values
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
     df["Кэшбэк"] = df["Кэшбэк"].fillna(0.0)
     df["Номер карты"] = df["Номер карты"].fillna("Unknown")
     df["Категория"] = df["Категория"].fillna("Unknown")
 
-    # 3. Создаем справочник DimCard
+    # 3. Build the DimCard dimension
     dim_cards = df[["Номер карты"]].drop_duplicates().rename(columns={"Номер карты": "card_id"})
     dim_cards["last_digits"] = dim_cards["card_id"].apply(
         lambda x: x.replace("*", "") if x != "Unknown" else "0000"
     )
 
-    # 4. Создаем справочник DimCategory
+    # 4. Build the DimCategory dimension
     dim_categories = df[["Категория"]].drop_duplicates().rename(columns={"Категория": "name"})
 
-    # 5. Создаем справочник DimDate
+    # 5. Build the DimDate dimension
     df["date_id"] = df["Дата операции"].dt.date
     dim_dates = df[["date_id"]].drop_duplicates()
     dim_dates["year"] = pd.to_datetime(dim_dates["date_id"]).dt.year
@@ -64,7 +64,7 @@ def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     dim_dates["day"] = pd.to_datetime(dim_dates["date_id"]).dt.day
     dim_dates["weekday"] = pd.to_datetime(dim_dates["date_id"]).dt.weekday
 
-    # 6. Создаем таблицу фактов FactTransaction
+    # 6. Build the FactTransaction fact table
     facts = df[
         [
             "date_id",
@@ -95,14 +95,14 @@ def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
         inplace=True,
     )
 
-    # 7. Рассчитываем сумму операции в рублях
+    # 7. Calculate the transaction amount in rubles
     operation_amount_rub = facts["amount"].where(facts["currency_code"] == "RUB")
     facts["amount_rub"] = facts["payment_amount"].where(
         facts["payment_currency_code"] == "RUB",
         operation_amount_rub
     )
 
-    logger.info("Трансформация завершена. Данные готовы к загрузке.")
+    logger.info("Transformation finished. Data is ready to load.")
 
     return {
         "dim_cards": dim_cards,
@@ -113,19 +113,19 @@ def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 
 def load(tables: dict[str, pd.DataFrame], db_engine: Engine) -> None:
-    """Загрузка (Load) данных в PostgreSQL."""
-    logger.info("Начинаем загрузку в PostgreSQL...")
+    """Load the tables into PostgreSQL."""
+    logger.info("Loading data into PostgreSQL...")
 
     with db_engine.begin() as conn:
         conn.execute(
             text("TRUNCATE TABLE fact_transactions, dim_dates, dim_cards, dim_categories RESTART IDENTITY CASCADE;")
         )
-    logger.info("Старые данные в таблицах очищены.")
+    logger.info("Existing data removed from the tables.")
 
     tables["dim_cards"].to_sql("dim_cards", db_engine, if_exists="append", index=False)
     tables["dim_categories"].to_sql("dim_categories", db_engine, if_exists="append", index=False)
     tables["dim_dates"].to_sql("dim_dates", db_engine, if_exists="append", index=False)
-    logger.info("Справочники (карты, категории, даты) успешно загружены.")
+    logger.info("Dimensions (cards, categories, dates) loaded.")
 
     categories_db = pd.read_sql('SELECT category_id, name FROM dim_categories', db_engine)
 
@@ -133,23 +133,23 @@ def load(tables: dict[str, pd.DataFrame], db_engine: Engine) -> None:
     facts = facts.drop(columns=['category_name', 'name'])
 
     facts.to_sql("fact_transactions", db_engine, if_exists="append", index=False)
-    logger.info(f"Успешно загружено {len(facts)} строк в fact_transactions.")
+    logger.info(f"Loaded {len(facts)} rows into fact_transactions.")
 
 
 def run_pipeline(file_path: Path, db_engine: Engine | None = None) -> None:
-    """Точка входа для запуска всего ETL-процесса."""
-    logger.info("=== ЗАПУСК ETL-ПАЙПЛАЙНА ===")
+    """Run the whole ETL process."""
+    logger.info("=== ETL PIPELINE STARTED ===")
 
-    # Используем переданный Engine или production Engine по умолчанию
+    # Use the given engine or fall back to the production engine
     target_engine = db_engine if db_engine is not None else engine
 
-    # 0. Начальное создание таблиц
+    # 0. Create tables if needed
     init_db(target_engine)
 
     # 1. Extract
     df = extract(file_path)
     if df is None:
-        logger.error("Пайплайн прерван: не удалось извлечь данные.")
+        logger.error("Pipeline aborted: failed to extract data.")
         return
 
     # 2. Transform
@@ -159,4 +159,4 @@ def run_pipeline(file_path: Path, db_engine: Engine | None = None) -> None:
     if transformed_data:
         load(transformed_data, target_engine)
 
-    logger.info("=== ETL-ПАЙПЛАЙН ЗАВЕРШЕН ===")
+    logger.info("=== ETL PIPELINE FINISHED ===")

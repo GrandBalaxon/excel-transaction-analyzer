@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> int:
-    """Точка входа для CLI."""
+    """CLI entry point."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(funcName)s - %(lineno)s - %(levelname)s - %(message)s",
@@ -18,10 +18,10 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description="Transactions ETL Pipeline")
 
-    # Создаем подкоманды
+    # Create subcommands
     subparsers = parser.add_subparsers(dest="command", required=True, help="Available commands")
 
-    # Команда 'run' для запуска пайплайна
+    # The 'run' command starts the pipeline
     run_parser = subparsers.add_parser("run", help="Run the ETL pipeline")
     run_parser.add_argument(
         "--file",
