@@ -96,18 +96,11 @@ def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     )
 
     # 7. Рассчитываем сумму операции в рублях
-    facts["amount_rub"] = None
-
-    payment_rub_mask = facts["payment_currency_code"] == "RUB"
-    operation_rub_mask = (
-        (facts["currency_code"] == "RUB") & ~payment_rub_mask
+    operation_amount_rub = facts["amount"].where(facts["currency_code"] == "RUB")
+    facts["amount_rub"] = facts["payment_amount"].where(
+        facts["payment_currency_code"] == "RUB",
+        operation_amount_rub
     )
-    facts.loc[payment_rub_mask, "amount_rub"] = facts.loc[
-        payment_rub_mask, "payment_amount"
-    ]
-    facts.loc[operation_rub_mask, "amount_rub"] = facts.loc[
-        operation_rub_mask, "amount"
-    ]
 
     logger.info("Трансформация завершена. Данные готовы к загрузке.")
 

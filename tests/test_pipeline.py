@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pandas as pd
+
 from src.pipeline import extract, transform
 
 
@@ -84,4 +86,5 @@ def test_transform_calculates_amount_rub(raw_transactions_df):
     result = transform(df)
     facts = result["facts"]
 
-    assert facts["amount_rub"].tolist() == [-95.0, -64.0, None]
+    assert facts["amount_rub"].iloc[:2].tolist() == [-95.0, -64.0]
+    assert pd.isna(facts["amount_rub"].iloc[2])
