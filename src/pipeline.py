@@ -65,19 +65,35 @@ def transform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     dim_dates["weekday"] = pd.to_datetime(dim_dates["date_id"]).dt.weekday
 
     # 6. Создаем таблицу фактов FactTransaction
-    facts = df[[
-        "date_id", "Номер карты", "Категория",
-        "Сумма операции", "Кэшбэк", "Статус", "Описание"
-    ]].copy()
+    facts = df[
+        [
+            "date_id",
+            "Номер карты",
+            "Категория",
+            "Сумма операции",
+            "Валюта операции",
+            "Сумма платежа",
+            "Валюта платежа",
+            "Кэшбэк",
+            "Статус",
+            "Описание",
+        ]
+    ].copy()
 
-    facts.rename(columns={
-        "Номер карты": "card_id",
-        "Категория": "category_name",
-        "Сумма операции": "amount",
-        "Кэшбэк": "cashback",
-        "Статус": "status",
-        "Описание": "description"
-    }, inplace=True)
+    facts.rename(
+        columns={
+            "Номер карты": "card_id",
+            "Категория": "category_name",
+            "Сумма операции": "amount",
+            "Валюта операции": "currency_code",
+            "Сумма платежа": "payment_amount",
+            "Валюта платежа": "payment_currency_code",
+            "Кэшбэк": "cashback",
+            "Статус": "status",
+            "Описание": "description",
+        },
+        inplace=True,
+    )
 
     logger.info("Трансформация завершена. Данные готовы к загрузке.")
 
