@@ -1,4 +1,4 @@
-## Этап сборки зависимостей (builder)
+## Dependency build stage (builder)
 FROM python:3.14-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -11,13 +11,13 @@ RUN pip install poetry==$POETRY_VERSION
 
 WORKDIR /app
 
-# Копируем только файлы для установки зависимостей (кэширование слоев)
+# Copy only the dependency files first (layer caching)
 COPY pyproject.toml poetry.lock ./
 
-# Устанавливаем зависимости (без dev и lint)
+# Install dependencies (without dev and lint groups)
 RUN poetry install --without dev --without lint --no-root --no-interaction --no-ansi
 
-## Финальный образ
+## Final image
 FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -25,14 +25,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Копируем установленные пакеты из builder-образа
+# Copy installed packages from the builder image
 COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Копируем исходный код
+# Copy the source code
 COPY src/ ./src/
 COPY cli.py ./
 
-# Указываем точку входа для CLI
+# Set the CLI entry point
 ENTRYPOINT ["python", "-m", "cli"]
 CMD ["run", "--file", "data/operations.xlsx"]
