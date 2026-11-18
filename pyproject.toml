@@ -1,6 +1,6 @@
 [project]
 name = "transactions-etl-pipeline"
-version = "0.1.0"
+version = "2.0.0"
 description = "ETL pipeline that loads bank transactions from Excel into a PostgreSQL star schema."
 authors = [
     {name = "Vlad Spinul",email = "shinokakaov@mail.ru"}
