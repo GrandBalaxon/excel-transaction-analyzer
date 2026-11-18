@@ -56,3 +56,32 @@ def test_transform_logic(raw_transactions_df):
     # Проверяем справочники
     assert len(tables["dim_cards"]) == 2
     assert len(tables["dim_categories"]) == 2
+
+
+def test_transform_calculates_amount_rub(raw_transactions_df):
+    """Проверяет расчет рублевой суммы с учетом валют операции и платежа."""
+    df = raw_transactions_df.copy()
+
+    # Операция в USD, платеж в RUB
+    df.loc[0, "Сумма операции"] = -100.0
+    df.loc[0, "Валюта операции"] = "USD"
+    df.loc[0, "Сумма платежа"] = -95.0
+    df.loc[0, "Валюта платежа"] = "RUB"
+
+    # Операция в RUB, платеж в CNY
+    df.loc[1, "Сумма операции"] = -64.0
+    df.loc[1, "Валюта операции"] = "RUB"
+    df.loc[1, "Сумма платежа"] = -420.0
+    df.loc[1, "Валюта платежа"] = "CNY"
+
+    # Операция и платеж в CNY
+    df.loc[2, "Статус"] = "OK"
+    df.loc[2, "Сумма операции"] = -55.0
+    df.loc[2, "Валюта операции"] = "CNY"
+    df.loc[2, "Сумма платежа"] = -55.0
+    df.loc[2, "Валюта платежа"] = "CNY"
+
+    result = transform(df)
+    facts = result["facts"]
+
+    assert facts["amount_rub"].tolist() == [-95.0, -64.0, None]
