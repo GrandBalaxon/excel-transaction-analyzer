@@ -1,10 +1,10 @@
 WITH DailyExpenses AS (
     SELECT
         d.date_id,
-        SUM(ABS(f.amount)) AS daily_amount
+        SUM(ABS(f.amount_rub)) AS daily_amount
     FROM fact_transactions f
     JOIN dim_dates d ON f.date_id = d.date_id
-    WHERE f.amount < 0
+    WHERE f.amount_rub < 0
     GROUP BY d.date_id
 )
 SELECT
