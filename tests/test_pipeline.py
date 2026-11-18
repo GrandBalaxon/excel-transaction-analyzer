@@ -42,6 +42,17 @@ def test_transform_logic(raw_transactions_df):
     assert facts["cashback"].isna().sum() == 0
     assert facts["cashback"].iloc[1] == 0.0
 
+    # Проверяем сохранение сумм и валют операции и платежа
+    assert "amount" in facts.columns
+    assert "currency_code" in facts.columns
+    assert "payment_amount" in facts.columns
+    assert "payment_currency_code" in facts.columns
+
+    assert facts["amount"].tolist() == [-160.89, -64.0]
+    assert facts["currency_code"].tolist() == ["RUB", "RUB"]
+    assert facts["payment_amount"].tolist() == [-160.89, -64.0]
+    assert facts["payment_currency_code"].tolist() == ["RUB", "RUB"]
+
     # Проверяем справочники
     assert len(tables["dim_cards"]) == 2
     assert len(tables["dim_categories"]) == 2
