@@ -1,15 +1,19 @@
 WITH MonthlyExpenses AS (
     SELECT
         c.name AS category_name,
-        SUM(ABS(f.amount)) AS category_total
+        SUM(ABS(f.amount_rub)) AS category_total
     FROM fact_transactions f
     JOIN dim_categories c ON f.category_id = c.category_id
     JOIN dim_dates d ON f.date_id = d.date_id
-    WHERE d.year = 2021 AND d.month = 12 AND f.amount < 0
+    WHERE
+        d.year = 2021
+        AND d.month = 12
+        AND f.amount_rub < 0
     GROUP BY c.name
 ),
 TotalExpense AS (
-    SELECT SUM(category_total) as total FROM MonthlyExpenses
+    SELECT SUM(category_total) AS total
+    FROM MonthlyExpenses
 )
 SELECT
     m.category_name,
