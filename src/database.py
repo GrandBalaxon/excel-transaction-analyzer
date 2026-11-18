@@ -1,11 +1,10 @@
 import logging
 import os
-from typing import Generator
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
 logger = logging.getLogger("database")
 
@@ -36,22 +35,10 @@ def create_db_engine(database_url: str) -> Engine:
 # Создаем production Engine
 engine = create_db_engine(DATABASE_URL)
 
-# Создаем фабрику сессий
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 
 class Base(DeclarativeBase):
     """Базовый класс для будущих моделей (таблиц)."""
     pass
-
-
-def get_db() -> Generator[Session, None, None]:
-    """Вспомогательная функция для получения сессии БД."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def init_db(db_engine: Engine) -> None:
