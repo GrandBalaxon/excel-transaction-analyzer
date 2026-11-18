@@ -1,7 +1,7 @@
 [project]
-name = "excel-transaction-analyzer"
+name = "transactions-etl-pipeline"
 version = "0.1.0"
-description = "Transaction analysis toolkit for Excel data."
+description = "ETL pipeline that loads bank transactions from Excel into a PostgreSQL star schema."
 authors = [
     {name = "Vlad Spinul",email = "shinokakaov@mail.ru"}
 ]
