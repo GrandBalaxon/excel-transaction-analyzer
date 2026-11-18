@@ -245,6 +245,9 @@ poetry run coverage report -m
 poetry run flake8 src tests cli.py
 poetry run isort --check-only src tests cli.py
 poetry run mypy src cli.py
+
+# stop all containers, including the test database (add -v to delete the working data too)
+docker compose --profile testing down
 ```
 
 The tests cover the transform logic, a full pipeline run from an Excel file to PostgreSQL, and the result of each SQL query on a known data set.

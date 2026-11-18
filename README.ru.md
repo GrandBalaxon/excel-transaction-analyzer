@@ -239,6 +239,9 @@ poetry run coverage report -m
 poetry run flake8 src tests cli.py
 poetry run isort --check-only src tests cli.py
 poetry run mypy src cli.py
+
+# остановить все контейнеры, включая тестовую базу (с -v удалятся и рабочие данные)
+docker compose --profile testing down
 ```
 
 Тесты проверяют логику трансформации, полный запуск пайплайна от Excel-файла до PostgreSQL и результат каждого SQL-запроса на известном наборе данных.
