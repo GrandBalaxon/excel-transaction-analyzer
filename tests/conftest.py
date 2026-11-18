@@ -1,82 +1,84 @@
+import os
+from typing import Generator
+
 import pandas as pd
 import pytest
+from sqlalchemy.engine import Engine, make_url
+
+from src.database import Base, create_db_engine
+
+TEST_DATABASE_NAME = "transactions_test"
 
 
 @pytest.fixture
-def sample_transactions():
-    return pd.DataFrame(
-        {
-            "Дата операции": [
-                "20.01.2023 12:00:00",
-                "20.02.2023 12:00:00",
-                "20.03.2023 12:00:00",
-                "20.04.2023 12:00:00",
-                "29.09.1997 12:00:00",
-            ],
-            "Категория": ["Еда", "Еда", "Еда", "Транспорт", "Медицинские услуги"],
-            "Кэшбэк": [0, 4, 50, None, None],
-        }
-    )
+def raw_transactions_df() -> pd.DataFrame:
+    """Raw data that mimics the operations.xlsx file."""
+    return pd.DataFrame({
+        "Дата операции": [
+            "31.12.2021 16:44:00",
+            "31.12.2021 16:42:04",
+            "14.11.2021 14:46:24"
+        ],
+        "Номер карты": ["*7197", "*4556", "*4556"],
+        "Статус": ["OK", "OK", "FAILED"],
+        "Сумма операции": [-160.89, -64.0, -55.0],
+        "Валюта операции": ["RUB", "RUB", "RUB"],
+        "Сумма платежа": [-160.89, -64.0, -55.0],
+        "Валюта платежа": ["RUB", "RUB", "RUB"],
+        "Кэшбэк": [1.0, None, 0.0],
+        "Категория": ["Супермаркеты", "Развлечения", "Переводы"],
+        "Описание": ["Колхоз", "Кино", "Перевод на карту"]
+    })
 
 
 @pytest.fixture
-def setup_mocks(mocker):
-    """Автоматически подменяет все внешние зависимости для каждого теста"""
-    # Мок для json.load с пустым словарём по умолчанию
-    mocker.patch("src.decorators.json.load", return_value={})
-
-    # Мок для json.dump
-    mocker.patch("src.decorators.json.dump")
-
-    # Мок для open и Path.touch
-    mocker.patch("src.decorators.Path.touch")
-
-    # Мок для hashlib.sha256 (чтобы тесты были детерминированы)
-    mock_sha256 = mocker.patch("src.decorators.hashlib.sha256")
-    mock_sha256.return_value.hexdigest.return_value = "mocked_hash"
+def empty_dataframe() -> pd.DataFrame:
+    """Empty dataframe for testing extract."""
+    return pd.DataFrame()
 
 
 @pytest.fixture
-def more_complex_transactions():
-    return [
-        {
-            "Дата операции": "10.01.2020 12:00:00",
-            "Статус": "OK",
-            "Номер карты": "*4556",
-            "Сумма операции с округлением": 100.0,
-            "Кэшбэк": 1.0,
-            "Категория": "Еда",
-            "Описание": "Магазин",
-            "Дата платежа": "10.01.2020",
-        },
-        {
-            "Дата операции": "09.01.2020 15:30:00",
-            "Статус": "OK",
-            "Номер карты": "*7197",
-            "Сумма операции с округлением": 200.0,
-            "Кэшбэк": 0.0,
-            "Категория": "Транспорт",
-            "Описание": "Такси",
-            "Дата платежа": "09.01.2020",
-        },
-        {
-            "Дата операции": "11.01.2020 10:00:00",
-            "Статус": "OK",
-            "Номер карты": "*4556",
-            "Сумма операции с округлением": 300.0,
-            "Кэшбэк": 3.0,
-            "Категория": "Развлечения",
-            "Описание": "Кино",
-            "Дата платежа": "11.01.2020",
-        },
-        {
-            "Дата операции": "08.01.2020 18:00:00",
-            "Статус": "FAILED",
-            "Номер карты": "*4556",
-            "Сумма операции с округлением": 400.0,
-            "Кэшбэк": 4.0,
-            "Категория": "Одежда",
-            "Описание": "Магазин",
-            "Дата платежа": "08.01.2020",
-        },
-    ]
+def test_engine() -> Generator[Engine, None, None]:
+    """Create an isolated SQLAlchemy engine for tests."""
+    database_url = os.getenv("TEST_DATABASE_URL")
+
+    if not database_url:
+        pytest.fail(
+            "The TEST_DATABASE_URL environment variable is not set.",
+            pytrace=False,
+        )
+
+    parsed_url = make_url(database_url)
+
+    if parsed_url.get_backend_name() != "postgresql":
+        pytest.fail(
+            "Tests must run against PostgreSQL.",
+            pytrace=False,
+        )
+
+    if parsed_url.database != TEST_DATABASE_NAME:
+        pytest.fail(
+            f"Tests are only allowed to use the database "
+            f"'{TEST_DATABASE_NAME}'. Got '{parsed_url.database}'.",
+            pytrace=False,
+        )
+
+    db_engine = create_db_engine(database_url)
+
+    try:
+        # Local import so that SQLAlchemy registers the models before creating tables
+        from src import models  # noqa: F401
+
+        # Drop the previous schema and create the tables again
+        Base.metadata.drop_all(bind=db_engine)
+        Base.metadata.create_all(bind=db_engine)
+
+        yield db_engine
+
+    finally:
+        try:
+            # Drop the test tables after the test
+            Base.metadata.drop_all(bind=db_engine)
+        finally:
+            # Close all connections of the test engine
+            db_engine.dispose()
