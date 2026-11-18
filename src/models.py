@@ -55,10 +55,21 @@ class FactTransaction(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
 
-    payment_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    payment_amount: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2),
+        nullable=False
+    )
     payment_currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
 
-    cashback: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
+    amount_rub: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2),
+        nullable=True
+    )
+
+    cashback: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2),
+        default=Decimal("0.00")
+    )
 
     status: Mapped[str] = mapped_column(String(20))
     description: Mapped[str] = mapped_column(String(255))
